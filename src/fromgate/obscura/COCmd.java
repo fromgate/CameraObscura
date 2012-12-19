@@ -222,8 +222,6 @@ public class COCmd implements CommandExecutor{
 			Location loc1 = COWoolSelect.getP1(p);
 			Location loc2 = COWoolSelect.getP2(p);
 
-			//if ((p.getItemInHand()!=null)&&(p.getItemInHand().getType()==Material.EMPTY_MAP)){
-
 			if (COCamera.isPhotoPaper(plg, p.getItemInHand())&&(p.getItemInHand().getAmount()==1)){
 				BufferedImage img = ic.createPixelArt2D(p,loc1, loc2, true,plg.burnpaintedwool);
 				if (img == null) {

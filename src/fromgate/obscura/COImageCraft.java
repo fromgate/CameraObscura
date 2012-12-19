@@ -135,6 +135,7 @@ public class COImageCraft {
 		if (f.exists()){
 			try {
 				img = ImageIO.read(f);
+				
 			} catch (Exception e){
 			}
 		}
@@ -145,6 +146,8 @@ public class COImageCraft {
 			} catch (Exception e){
 			}
 		}
+		
+		
 
 		f = new File (plg.d_skins+"default.png");
 		if ((img == null)&&f.exists()){

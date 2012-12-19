@@ -23,26 +23,21 @@
 package fromgate.obscura;
 
 import net.milkbowl.vault.economy.Economy;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.Packet104WindowItems;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Button;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
 public class COCamera {
-	private static CraftItemStack					craftStack;
-	private static net.minecraft.server.ItemStack	itemStack;
 	
 	public static boolean isBlockIsPartOfCamera(Obscura plg, Block b){
 		if (!((b.getType()==Material.FENCE)||(b.getType()==Material.NOTE_BLOCK)||(b.getType()==Material.STONE_BUTTON))) return false;
@@ -153,50 +148,11 @@ public class COCamera {
 			photoitem.setItemStack(photo);
 		}
 	}
-	
-    public static Packet104WindowItems sendItemUpdate(Player player, ItemStack[] item){
-        Packet104WindowItems packet = new Packet104WindowItems();
-        packet.a = 0;
-        packet.b = toItemStack(item);
-        return packet;
-    }
- 
-    public static net.minecraft.server.ItemStack[] toItemStack(ItemStack[] item)
-    {
-        net.minecraft.server.ItemStack[] serverItems = new net.minecraft.server.ItemStack[item.length];
-        for (int i = 0; i < item.length; i ++)
-        {
-            serverItems[i] = new net.minecraft.server.ItemStack(item[i].getTypeId(), item[i].getAmount(), item[i].getDurability(), null);
-        }
-        return serverItems;
-    }
-    
-    public static void updateInventory (Player p, ItemStack[] itemstack){
-    	((CraftPlayer)p).getHandle().netServerHandler.sendPacket(sendItemUpdate(p, itemstack));
-    }
-
-	
-	
 	public static ItemStack setName(ItemStack item, String name) {
-		if (item instanceof CraftItemStack) {
-			craftStack = (CraftItemStack) item;
-			COCamera.itemStack = craftStack.getHandle();
-		}
-		else if (item instanceof ItemStack) {
-			craftStack = new CraftItemStack(item);
-			COCamera.itemStack = craftStack.getHandle();
-		}
-		NBTTagCompound tag = itemStack.tag;
-		if (tag == null) {
-			tag = new NBTTagCompound();
-			tag.setCompound("display", new NBTTagCompound());
-			itemStack.tag = tag;
-		}
-		
-		tag = itemStack.tag.getCompound("display");
-		tag.setString("Name", ChatColor.RESET + name);
-		itemStack.tag.setCompound("display", tag);
-		return craftStack;
+		ItemMeta im = item.getItemMeta();
+		im.setDisplayName(name);
+		item.setItemMeta(im);
+		return item.clone();
 	}
 	
 	public static void initRecipes(Obscura plg){
@@ -293,7 +249,5 @@ public class COCamera {
 		}
 		return (plg.economy != null);
 	}
-	
-	
 	
 }

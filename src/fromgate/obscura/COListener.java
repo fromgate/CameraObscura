@@ -263,16 +263,16 @@ public class COListener implements Listener {
 		byte dirdata = 0; 
 		
 		//1.4.2-R0.2
-		if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 1;
+		/*if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 1;
 		else if (event.getBlockFace() == BlockFace.NORTH) dirdata = 2;
 		else if (event.getBlockFace() == BlockFace.WEST) dirdata = 3;
-		else if (event.getBlockFace() == BlockFace.EAST) dirdata = 4;
+		else if (event.getBlockFace() == BlockFace.EAST) dirdata = 4;*/
 
 		//1.4.2-R0.3
-		/*if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 3;
+		if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 3;
 		else if (event.getBlockFace() == BlockFace.NORTH) dirdata = 4;
 		else if (event.getBlockFace() == BlockFace.WEST) dirdata = 2;
-		else if (event.getBlockFace() == BlockFace.EAST) dirdata = 1;*/
+		else if (event.getBlockFace() == BlockFace.EAST) dirdata = 1;
 		
 		if (dirdata == 0) return;
 		if (u.placeBlock(b, p, Material.STONE_BUTTON, dirdata, false)) return;

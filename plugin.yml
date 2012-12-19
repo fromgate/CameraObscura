@@ -1,6 +1,6 @@
 name: CameraObscura
 main: fromgate.obscura.Obscura
-version: 0.1.0
+version: 0.1.1
 author: fromgate, fromgate@gmail.com
 load: POSTWORLD
 commands:
