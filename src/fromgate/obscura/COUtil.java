@@ -68,8 +68,9 @@ public class COUtil extends FGUtilCore {
 		addCmd("backgrounds", "config",MSG("cmd_backgrounds","&3/photo backgrounds [page] [filename mask]",'b'));
 		addCmd("download", "config",MSG("cmd_download","&3/photo download <name> <url>",'b'));	 	
 		addCmd("remove", "remove",MSG("cmd_remove","&3/photo remove <id>",'b'));               
-		addCmd("rename", "rename",MSG("cmd_rename","&3/photo rename <id> <new name>",'b'));    
-		addCmd("allowcopy", "allowcopy",MSG("cmd_allowcopy","&3/photo allowcopy [id]",'b'));   
+		addCmd("rename", "rename",MSG("cmd_rename","&3/photo rename [id] <new name>",'b'));    
+		addCmd("allowcopy", "allowcopy",MSG("cmd_allowcopy","&3/photo allowcopy [id]",'b'));
+		addCmd("showname", "showname",MSG("cmd_showname","&3/photo showname [id]",'b'));
 		addCmd("owner", "owner",MSG("cmd_owner","&3/photo owner [id] <new owner>",'b'));       
 		addCmd("head", "photo",MSG("cmd_headshot","&3/photo head [player] [background]",'b'));              
 		addCmd("top", "photo",MSG("cmd_tophalf","&3/photo top [player] [background]",'b'));                  
@@ -78,7 +79,9 @@ public class COUtil extends FGUtilCore {
 		addCmd("paint", "pixelart",MSG("cmd_paint","&3/photo paint {center} <name>",'b'));     
 		addCmd("repaint", "repaint",MSG("cmd_repaint","&3/photo repaint {center} <name>",'b'));
 		addCmd("id", "id",MSG("cmd_id","&3/photo id",'b'));        
-		addCmd("give", "give",MSG("cmd_givemap","&3/photo give <picture id>",'b')); 
+		addCmd("give", "give",MSG("cmd_givemap","&3/photo give <picture id>",'b'));
+		addCmd("reload", "config",MSG("cmd_reload","&3/photo reload",'b'));
+		addCmd("rst", "config",MSG("cmd_rst","&3/photo rst [player]",'b'));
 		addCmd("cfg", "config",MSG("cmd_cfg","&3/photo cfg",'b'));
 	}
 
@@ -92,6 +95,7 @@ public class COUtil extends FGUtilCore {
 		addMSG("сmd_remove", "%1% - remove picture with defined id");
 		addMSG("cmd_rename", "%1% - name picture (holding in your hand)");
 		addMSG("cmd_allowcopy", "%1% - toggle copy mode for defined picture");
+		addMSG("cmd_showname", "%1% - toggle displaying name mode for defined picture");
 		addMSG("cmd_owner", "%1% - redefine owner of picture with defined id");
 		addMSG("cmd_headshot", "%1% - take a headshot photo");
 		addMSG("cmd_tophalf", "%1% - take a tophalf photo");
@@ -99,7 +103,14 @@ public class COUtil extends FGUtilCore {
 		addMSG("cmd_paint", "%1% - create pixelart picture"); 
 		addMSG("cmd_repaint", "%1% - repaint picture holding in hand with new pixelart"); 
 		addMSG("cmd_id", "%1% - show info about picture (map) in hand"); 
+		addMSG("cmd_reload", "%1% - reload plugin configuration");
+		addMSG("cmd_rst", "%1% - reset rendered information (repaint pictures)");
 		addMSG("cmd_cfg", "%1% - display plugin configuration");
+		
+		
+		
+		
+		
 		addMSG("msg_newmapcreated", "New picture created! (map id: %1%)");
 		addMSG("msg_cannotaddphoto", "Can not create new photo!");
 		addMSG("msg_needphotopaper", "You must hold one sheet of photopaper to develop a new photo");
@@ -132,10 +143,10 @@ public class COUtil extends FGUtilCore {
 		addMSG("msg_renamed", "Picture (#%1%) renamed to: %2%");
 		addMSG("msg_copyallowed", "Copying of picture #%1% is allowed now!");
 		addMSG("msg_copyforbidden", "Copying of picture #%1% is forbidden now!");
-		addMSG("msg_acurnotowner", "You have not enough permissions to change this picture copy mode");
-		addMSG("msg_acneedmap", "You need to hold map item in your hand or define picture number at command");
+		addMSG("msg_acurnotowner", "You have not enough permissions to edit picture parameters");
+		addMSG("msg_acneedmap", "You need to hold map item in your hands or define picture number at command");
 		addMSG("msg_ownerset", "Owner of picture #%1% is set to %2%");
-		addMSG("msg_owurnotowner", "You have not enought permission to change owner of this picture");
+		addMSG("msg_owurnotowner", "You have not enought permissions to change owner of this picture");
 		addMSG("msg_paintcentercmd", "You need to use command %1% to paint centered picture");
 		addMSG("msg_youpaid", "You paid %1% for photography! (Balance: %2%)");
 		addMSG("msg_youreceived", "You received %1% from %2% for photography! (Balance: %3%)");
@@ -161,6 +172,13 @@ public class COUtil extends FGUtilCore {
 		addMSG("cfg_minpixelart", "Minimal size of pixel-art: %1%x%1%");
 		addMSG("cfg_defbackground", "Default background image: %1%");
 		addMSG("cfg_totalmaps", "Total pictures: %1% Deleted: %2%");
+		addMSG("msg_willshowname", "Name of picture #%1% now will be displayed at the canvas");
+		addMSG("msg_willnotshowname", "Displaying the name of picture #%1% is now disabled");
+		addMSG("msg_allowcopy", "allow copy");
+		addMSG("msg_displayname", "display name");
+		addMSG("msg_removedimage", "Removed image (#%1%)");
+		addMSG("msg_rstplayer", "All images will be repainted for player %1%");
+		addMSG("msg_rstall", "All images will be repainted!");
 		//addMSG("", "");
 	}
 

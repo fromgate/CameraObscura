@@ -31,8 +31,17 @@ public class CORenderHistory {
 	HashMap<String, Set<Short>> rh = new HashMap<String, Set<Short>>(); 
 	
 	public void clearHistory (Player p){
-		if (rh.containsKey(p.getName())) rh.remove(p.getName());
+		clearHistory (p.getName());
 	}
+
+	public void clearHistory (String pname){
+		if (rh.containsKey(pname)) rh.remove(pname);
+	}
+	
+	public void clearHistory (){
+		rh.clear();
+	}
+	
 	public boolean isRendered(Player p, short map_id){
 		String pn = p.getName();
 		if (rh.containsKey(pn)){

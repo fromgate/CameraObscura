@@ -38,13 +38,18 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.NotePlayEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class COListener implements Listener {
@@ -62,7 +67,14 @@ public class COListener implements Listener {
 		u.UpdateMsg(p);
 		plg.rh.clearHistory(p);
 		COWoolSelect.clearSelection(plg, p);
+		COCamera.updateInventoryItems(plg, p.getInventory());
 	}
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerQuit (PlayerQuitEvent event){
+		plg.rh.clearHistory(event.getPlayer());
+	}
+	
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBrush (PlayerInteractEvent event){
@@ -216,6 +228,13 @@ public class COListener implements Listener {
 		}
 	}
 
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlaceButtonOnTheNoteBlock (BlockPlaceEvent event){
+		if (!plg.block_sbutton_place) return;
+		if ((event.getBlockPlaced().getType() == Material.STONE_BUTTON)&&
+				(event.getBlockAgainst().getType() == Material.NOTE_BLOCK)) event.setCancelled(true);
+	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onSetObscuraPrice (SignChangeEvent event){
@@ -279,7 +298,20 @@ public class COListener implements Listener {
 		if (!u.removeItemInHand(p, plg.camera_id, plg.camera_data, 1)) b.setType(Material.AIR);
 
 	}
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onOpenInventory (InventoryOpenEvent event){
+		COCamera.updateInventoryItems(plg, event.getInventory());
+	}
 
 
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerPickupItemEvent (PlayerPickupItemEvent event){
+		COCamera.updateItemName(plg, event.getItem().getItemStack());
+	}
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerItemHeld (PlayerItemHeldEvent event){
+		COCamera.updateItemName(plg,event.getPlayer().getInventory().getItem(event.getNewSlot()));
+	}
 
 }

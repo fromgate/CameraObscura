@@ -29,12 +29,21 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /*
+ * Изменения:
+ * 0.1.0
+ * - выпуск плагина
+ * 0.1.1
+ * - апдейт до 1.4.5 и более поздних
+ * 0.1.2
+ * - Фикс установки кнопки на нотные блоки (с шифтом)
+ * - Отображение названия картинки на карте (настраивается щрифт, цвет, обводка)
+ * - Автосмена названия итемов (карты, фотоаппараты, фотобумага)
+ * 
  * TODO
- * 
  * - Авто переделка удаленных карт в фотобумагу?   
- * - Авто переименование карт после смены название (и соответственно - удаления!)
  * - Возможность перерисовывать/перефотографировать все карты при наличии пермишена
- * 
+ * - Возможность отображать название карты (настраивается для каждой индивидуально)
+ * 	
  */
 
 /* 
@@ -63,12 +72,12 @@ public class Obscura extends JavaPlugin {
 	boolean version_check = true;
 	String language = "english";
 	boolean language_save = false;
-	
+
 	private String dir_album="album";
 	private String dir_images="images";
 	private String dir_backgrounds = "backgrounds";
 	private String dir_skins = "skins";
-	
+
 	/////////////////////////////////////////////////
 	int brush_id = Material.FEATHER.getId();
 	int photopaper_id = 339;    //395 - empty_map, 339 - paper
@@ -78,45 +87,59 @@ public class Obscura extends JavaPlugin {
 	boolean reusedeleted = true;
 	boolean use_recipes = true;
 	boolean obscura_drop = true; //будет ли камера на штативе выбрасывать фотоаппарат при разрушении?
+	boolean block_sbutton_place = true;
 	int minpixelart = 16;
 	String default_background = "default"; // "random" - для случайного, реализовать
 	int picsperowner = 15;
 	boolean burnpaintedwool = false;
-	
+
 	float focus_1 = 2.0f;
 	float focus_2 = 3.8f;
-	
+
 	String steeve = "default_skin.png";
 	String skinurl = "http://s3.amazonaws.com/MinecraftSkins/";
-	
+
+	//Настройка отображения заголовка
+	boolean default_showname=true;
+	String font_name = "Serif";
+	int font_size = 9;
+	boolean stroke = true;
+	String name_color = "#000000";
+	String stroke_color = "#FFFFFF";
+	int name_x = 1;
+	int name_y = 122;
+
+
+
+
 	protected Economy economy = null;
 	boolean vault_eco = false;
-	
+
 	String d_images;
 	String d_album; 
 	String d_skins;
 	String d_backgrounds;
-	
-	
+
+
 	COUtil u;
 	COImageCraft ic;
 	COAlbum album;
 	COCmd cmd;
 	COListener l;
 	CORenderHistory rh;
-	
-	
-	
+
+
+
 	@Override
 	public void onEnable() {
 		loadCfg();
 		saveCfg();
-		
+
 		d_images = getDataFolder()+File.separator+dir_images+File.separator;
 		d_album = getDataFolder()+File.separator+dir_album+File.separator;
 		d_skins = getDataFolder()+File.separator+dir_skins+File.separator;
 		d_backgrounds = getDataFolder()+File.separator+dir_backgrounds+File.separator;
-		
+
 		File dir = new File (d_images);
 		if (!dir.exists()) dir.mkdirs();
 		dir = new File (d_album);
@@ -125,7 +148,7 @@ public class Obscura extends JavaPlugin {
 		if (!dir.exists()) dir.mkdirs();
 		dir = new File (d_skins);
 		if (!dir.exists()) dir.mkdirs();
-		
+
 		u = new COUtil (this, version_check, language_save, language, "camera-obscura", "CameraObscura", "photo", "&3[CO]&f ");
 		rh = new CORenderHistory ();
 		ic = new COImageCraft (this);
@@ -138,36 +161,44 @@ public class Obscura extends JavaPlugin {
 		if (use_recipes) COCamera.initRecipes(this);
 		vault_eco = COCamera.setupEconomy(this);
 		if (!vault_eco) u.log("Connection to Vault failed!");
-		
+
 		try {
 			MetricsLite metrics = new MetricsLite(this);
 			metrics.start();
 		} catch (IOException e) {
 		}
 	}
-	
-	
+
+
 	public void saveCfg(){
-		 getConfig().set("general.check-updates",version_check);
-		 getConfig().set("general.language",language);
-		 getConfig().set("general.language-save",language_save);
-		 getConfig().set("items.brush-id",brush_id);
-		 getConfig().set("items.photo-paper.id",photopaper_id);
-		 getConfig().set("items.photo-paper.data",photopaper_data);
-		 getConfig().set("items.photo-camera.id",camera_id);
-		 getConfig().set("items.photo-camera.data",camera_data);
-		 getConfig().set("items.use-recipes", use_recipes);
-		 getConfig().set("items.obscura-drop", obscura_drop);
-		 getConfig().set("pictures.reuse-deleted-maps", reusedeleted );
-		 getConfig().set("pictures.minimal-pixel-art-size",minpixelart);
-		 getConfig().set("pictures.default-background",default_background);
-		 getConfig().set("pictures.pictures-per-owner",picsperowner);
-		 getConfig().set("pictures.burn-pixel-art-wool", burnpaintedwool);
-		 getConfig().set("pictures.default-skin",steeve);
-		 getConfig().set("pictures.skin-url",skinurl);
-		 saveConfig();
+		getConfig().set("general.check-updates",version_check);
+		getConfig().set("general.language",language);
+		getConfig().set("general.language-save",language_save);
+		getConfig().set("items.brush-id",brush_id);
+		getConfig().set("items.photo-paper.id",photopaper_id);
+		getConfig().set("items.photo-paper.data",photopaper_data);
+		getConfig().set("items.photo-camera.id",camera_id);
+		getConfig().set("items.photo-camera.data",camera_data);
+		getConfig().set("items.use-recipes", use_recipes);
+		getConfig().set("items.obscura-drop", obscura_drop);
+		getConfig().set("pictures.reuse-deleted-maps", reusedeleted );
+		getConfig().set("pictures.minimal-pixel-art-size",minpixelart);
+		getConfig().set("pictures.default-background",default_background);
+		getConfig().set("pictures.pictures-per-owner",picsperowner);
+		getConfig().set("pictures.burn-pixel-art-wool", burnpaintedwool);
+		getConfig().set("pictures.default-skin",steeve);
+		getConfig().set("pictures.skin-url",skinurl);
+		getConfig().set("picture-name.show-at-new-pictures",default_showname);
+		getConfig().set("picture-name.x",name_x);
+		getConfig().set("picture-name.y",name_y);
+		getConfig().set("picture-name.font-name",font_name);
+		getConfig().set("picture-name.font-size",font_size);
+		getConfig().set("picture-name.font-color",name_color);
+		getConfig().set("picture-name.stroke",stroke);
+		getConfig().set("picture-name.stroke-color",stroke_color);
+		saveConfig();
 	}
-	
+
 	public void loadCfg(){
 		version_check = getConfig().getBoolean("general.check-updates",true);
 		language = getConfig().getString("general.language","english");
@@ -186,12 +217,20 @@ public class Obscura extends JavaPlugin {
 		burnpaintedwool   = getConfig().getBoolean ("pictures.burn-pixel-art-wool", true);
 		steeve = getConfig().getString("pictures.default-skin","default_skin.png");
 		skinurl = getConfig().getString("pictures.skin-url","http://s3.amazonaws.com/MinecraftSkins/");
+		default_showname=getConfig().getBoolean("picture-name.show-at-new-pictures",true);
+		name_x = getConfig().getInt("picture-name.x",1);
+		name_y = getConfig().getInt("picture-name.y",122);
+		font_name = getConfig().getString("picture-name.font-name","Serif");
+		font_size = getConfig().getInt("picture-name.font-size",9);
+		name_color = getConfig().getString("picture-name.font-color","#000000");
+		stroke =getConfig().getBoolean("picture-name.stroke",true);
+		stroke_color = getConfig().getString("picture-name.stroke-color","#FFFFFF");
 	}
-	
-	
-	
-	
 
-	
-	
+
+
+
+
+
+
 }

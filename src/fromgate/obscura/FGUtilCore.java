@@ -767,6 +767,9 @@ public abstract class FGUtilCore {
 		return ChatColor.stripColor(MSG (id));
 	}
 
+	public String MSGnc(String msg_key, String key){
+		return ChatColor.stripColor(MSG (msg_key, key));
+	}
 
 	/*
 	 * Установка блока с проверкой на приват

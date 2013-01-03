@@ -41,11 +41,13 @@ import org.bukkit.inventory.ItemStack;
 
 public class COCmd implements CommandExecutor{
 	Obscura plg;
+	COAlbum album;
 	COUtil u;
 	COImageCraft ic;
 
 	public COCmd(Obscura plg){
 		this.plg = plg;
+		this.album = plg.album;
 		this.u = plg.u;
 		this.ic = plg.ic;
 	}
@@ -60,7 +62,7 @@ public class COCmd implements CommandExecutor{
 				else if (args.length==3) return ExecuteCmd(p, args[0],args[1],args[2]);
 				else if (args.length>3){
 					String arg2 = args[2];
-					for (int i = 3; i<args.length;i++) arg2 = arg2+args[i];
+					for (int i = 3; i<args.length;i++) arg2 = arg2+" "+args[i];
 					return ExecuteCmd(p, args[0],args[1],arg2);
 				}
 			}
@@ -72,26 +74,43 @@ public class COCmd implements CommandExecutor{
 		if (cmd.equalsIgnoreCase("help")){
 			u.PrintHLP(p);
 		} else if (cmd.equalsIgnoreCase("id")){
+			
 			if ((p.getItemInHand()!=null)&&(p.getItemInHand().getType()==Material.MAP)){
 				short id = p.getItemInHand().getDurability();
 				String maptype = u.MSGnc("map_regular");
-				if (plg.album.isObscuraMap(id)) maptype = u.MSGnc("map_obscura");
-				if (plg.album.isDeletedMap(id)) maptype = u.MSGnc("map_deleted");
+				if (album.isObscuraMap(id)) maptype = u.MSGnc("map_obscura");
+				if (album.isDeletedMap(id)) maptype = u.MSGnc("map_deleted");
 				u.PrintMSG(p, "msg_mapidtype",id+";"+maptype);
 
 			} else u.PrintMSG(p, "msg_needmapinhand");
 		} else if (cmd.equalsIgnoreCase("cfg")){
 			u.PrintCfg(p);
 		} else if (cmd.equalsIgnoreCase("allowcopy")){
-			if (plg.album.isObscuraMap(p.getItemInHand())){
+			if (album.isObscuraMap(p.getItemInHand())){
 				short id = p.getItemInHand().getDurability();
-				if (plg.album.isOwner(id, p)){
-					plg.album.setAllowCopy(id, plg.album.getAllowCopy(id));
+				if (album.isOwner(id, p)){
+					album.setAllowCopy(id, album.getAllowCopy(id));
 
-					if (plg.album.getAllowCopy(id)) u.PrintMSG(p, "msg_copyallowed",id);
+					if (album.getAllowCopy(id)) u.PrintMSG(p, "msg_copyallowed",id);
 					else u.PrintMSG(p, "msg_copyforbidden",id);
 				} else u.PrintMSG(p, "msg_acurnotowner",Short.toString(id),'c','4');
 			} else u.PrintMSG(p, "msg_acneedmap");
+			
+		} else if (cmd.equalsIgnoreCase("showname")){
+			if (album.isObscuraMap(p.getItemInHand())){
+				short id = p.getItemInHand().getDurability();
+				if (album.isOwner(id, p)){
+					
+					album.setShowName(id, !album.isNameShown(id));
+					
+					if (album.isNameShown(id)) u.PrintMSG(p, "msg_willshowname",id);
+					else u.PrintMSG(p, "msg_willnotshowname",id);
+					
+					plg.rh.forceUpdate(id);
+					
+				} else u.PrintMSG(p, "msg_acurnotowner",Short.toString(id),'c','4');
+			} else u.PrintMSG(p, "msg_acneedmap");
+
 
 		} else if (cmd.equalsIgnoreCase("camera")){
 			ItemStack camera = COCamera.newCamera(plg);//COCamera.setName(new ItemStack (plg.camera_id, plg.camera_data), "Photo Camera");
@@ -120,21 +139,25 @@ public class COCmd implements CommandExecutor{
 			for (String fn : dir.list()) ln.add(fn);
 			u.printPage(p, ln, 1, "msg_bglist", "msg_footer", true);			
 		} else if (cmd.equalsIgnoreCase("list")){
-			plg.album.printList(p,p.getName(),1);
+			album.printList(p,p.getName(),1);
 		} else if (cmd.equalsIgnoreCase("brush")){
 			boolean brushmode = !COWoolSelect.getBrushMode(p);
 			COWoolSelect.setBrushMode(plg, p, brushmode);
 			u.PrintEnDis (p,"msg_brushmode",brushmode);
 		} else if (cmd.equalsIgnoreCase("head")){
-			plg.album.developPortrait(p);
+			album.developPortrait(p);
 		} else if (cmd.equalsIgnoreCase("top")){
-			plg.album.developTopHalfPhoto(p);
+			album.developTopHalfPhoto(p);
 		} else if (cmd.equalsIgnoreCase("full")){
-			plg.album.developPhoto(p);
+			album.developPhoto(p);
 		} else if (cmd.equalsIgnoreCase("reload")){
-			plg.album.loadAlbum();
+			album.loadAlbum();
 			plg.loadCfg();
+			plg.rh.clearHistory();
 			u.PrintMSG(p, "msg_reloadcfg");
+		} else if (cmd.equalsIgnoreCase("rst")){
+			plg.rh.clearHistory();
+			u.PrintMSG(p, "msg_rstall");
 		} else return false;
 		return true;
 	}
@@ -143,19 +166,36 @@ public class COCmd implements CommandExecutor{
 	public boolean ExecuteCmd (Player p, String cmd, String arg){
 		if (cmd.equalsIgnoreCase("help")){
 			u.PrintHLP(p, arg);
+		} else if (cmd.equalsIgnoreCase("rst")){
+			plg.rh.clearHistory(arg);
+			u.PrintMSG(p, "msg_rstplayer",arg);
+		} else if (cmd.equalsIgnoreCase("rename")){
+			return ExecuteCmd (p, cmd, "",arg);
 		} else if (cmd.equalsIgnoreCase("allowcopy")){
 			if (arg.matches("[0-9]*")){
 				short id = Short.parseShort(arg);
-				if (plg.album.getAllowCopy(id)) u.PrintMSG(p, "msg_copyallowed",id);
+				if (album.getAllowCopy(id)) u.PrintMSG(p, "msg_copyallowed",id);
 				else u.PrintMSG(p, "msg_copyforbidden",id);
+			} else u.PrintMSG(p, "msg_acneedmap");
+			
+			
+		} else if (cmd.equalsIgnoreCase("showname")){
+			if (arg.matches("[0-9]*")){
+				short id = Short.parseShort(arg);
+				if (album.isOwner(id, p)){
+					album.setShowName(id, album.isNameShown(id));
+					if (album.getAllowCopy(id)) u.PrintMSG(p, "msg_willshowname",id);
+					else u.PrintMSG(p, "msg_willnotshowname",id);
+					plg.rh.forceUpdate(id);
+				} else u.PrintMSG(p, "msg_acurnotowner",Short.toString(id),'c','4');
 			} else u.PrintMSG(p, "msg_acneedmap");
 
 		} else if (cmd.equalsIgnoreCase("owner")){
-			if (plg.album.isObscuraMap(p.getItemInHand())){
-				if (!plg.album.isLimitOver(arg)){
+			if (album.isObscuraMap(p.getItemInHand())){
+				if (!album.isLimitOver(arg)){
 					short id = p.getItemInHand().getDurability();
-					if (plg.album.isOwner(id, p)){
-						plg.album.setOwner(id, arg);
+					if (album.isOwner(id, p)){
+						album.setOwner(id, arg);
 						u.PrintMSG(p, "msg_ownerset",id+";"+arg);
 					} else u.PrintMSG(p, "msg_owurnotowner",Short.toString(id),'c','4');
 				} else u.PrintMSG(p, "msg_playeroverlimit",arg,'c','4');
@@ -193,7 +233,7 @@ public class COCmd implements CommandExecutor{
 			String pname = p.getName();
 			if (arg.matches("[1-9]+[1-9]*")) pnum = Integer.parseInt(arg);
 			else pname = arg;
-			plg.album.printList(p,pname, pnum);
+			album.printList(p,pname, pnum);
 		} else if (cmd.equalsIgnoreCase("paper")){
 			int amount = 1;
 			if (arg.matches("[1-9]+[0-9]*")) amount = Integer.parseInt(arg);
@@ -207,12 +247,12 @@ public class COCmd implements CommandExecutor{
 		} else if (cmd.equalsIgnoreCase("give")){
 			short id=-1;
 			if (arg.matches("[1-9]+[0-9]*")) id = Short.parseShort(arg);
-			if ((id>0)&&(plg.album.isObscuraMap(id))){
-				COCamera.giveImageToPlayer(plg, p, id, plg.album.getPictureName(id));
-				u.PrintMSG(p, "msg_picturegiven",plg.album.getPictureName(id)+";"+id);
+			if ((id>0)&&(album.isObscuraMap(id))){
+				COCamera.giveImageToPlayer(plg, p, id, album.getPictureName(id));
+				u.PrintMSG(p, "msg_picturegiven",album.getPictureName(id)+";"+id);
 			} else u.PrintMSG(p, "msg_unknownpicid",arg,'c','4');
 		} else if (cmd.equalsIgnoreCase("portrait")){
-			plg.album.developPortrait(p,p.getName(), arg);
+			album.developPortrait(p,p.getName(), arg);
 		} else if (cmd.equalsIgnoreCase("paint")){
 			if (!COWoolSelect.isRegionSelected(p)) {
 				u.PrintMSG(p, "msg_pxlnoselection");
@@ -230,7 +270,7 @@ public class COCmd implements CommandExecutor{
 				}
 
 
-				short mapid = plg.album.addImage(p.getName(), arg, img, false, true);
+				short mapid = album.addImage(p.getName(), arg, img, false, true);
 				if (mapid>=0){
 					p.getItemInHand().setType(Material.MAP);
 					p.getItemInHand().setDurability(mapid);
@@ -249,11 +289,11 @@ public class COCmd implements CommandExecutor{
 			Location loc1 = COWoolSelect.getP1(p);
 			Location loc2 = COWoolSelect.getP2(p);
 			if ((p.getItemInHand()!=null)&&(p.getItemInHand().getType()==Material.MAP)&&
-					plg.album.isObscuraMap(p.getItemInHand())){
+					album.isObscuraMap(p.getItemInHand())){
 				short mapid = p.getItemInHand().getDurability();
-				if (plg.album.isOwner(mapid, p)){
+				if (album.isOwner(mapid, p)){
 					BufferedImage img = ic.createPixelArt2D(p,loc1, loc2, true,plg.burnpaintedwool);
-					plg.album.updateImage(mapid, p.getName(), arg, img, false);
+					album.updateImage(mapid, p.getName(), arg, img, false);
 					p.setItemInHand(COCamera.setName(p.getItemInHand(), arg));
 					u.PrintMSG(p, "msg_newmapcreated",mapid);
 				} else u.PrintMSG(p, "msg_owurnotowner",Short.toString(mapid),'c','4');
@@ -263,16 +303,18 @@ public class COCmd implements CommandExecutor{
 		} else if (cmd.equalsIgnoreCase("remove")){
 			if (arg.matches("[0-9]*")){
 				short id = Short.parseShort(arg);
-
-				if (plg.album.deleteImage(id)) u.PrintMSG(p, "msg_mapremoved",id);
+				if (album.deleteImage(id)) {
+					u.PrintMSG(p, "msg_mapremoved",id);
+					COCamera.updateInventoryItems(plg, p.getInventory());
+				}
 				else u.PrintMSG(p, "msg_mapremovefail",id);
 
 			} else u.PrintMSG(p, "msg_wrongnumber",arg);
 		} else if (cmd.equalsIgnoreCase("photo")){
-			plg.album.developPhoto(p, arg);
+			album.developPhoto(p, arg);
 		} else if (cmd.equalsIgnoreCase("image")){
 			if (COCamera.isPhotoPaper(plg, p.getItemInHand())&&(p.getItemInHand().getAmount()==1)){
-				short mapid = plg.album.addImage(p.getName(), arg, ic.getImageByName(arg), false, true);
+				short mapid = album.addImage(p.getName(), arg, ic.getImageByName(arg), false, true);
 				if (mapid>=0){
 					p.getItemInHand().setType(Material.MAP);
 					p.getItemInHand().setDurability(mapid);
@@ -282,11 +324,11 @@ public class COCmd implements CommandExecutor{
 
 
 		} else if (cmd.equalsIgnoreCase("head")){
-			plg.album.developPortrait(p,p.getName(),arg);
+			album.developPortrait(p,p.getName(),arg);
 		} else if (cmd.equalsIgnoreCase("top")){
-			plg.album.developTopHalfPhoto(p,p.getName(),arg);
+			album.developTopHalfPhoto(p,p.getName(),arg);
 		} else if (cmd.equalsIgnoreCase("full")){
-			plg.album.developPhoto(p,p.getName(),arg);
+			album.developPhoto(p,p.getName(),arg);
 		} else return false;
 		return true;
 	}
@@ -295,7 +337,7 @@ public class COCmd implements CommandExecutor{
 		if (cmd.equalsIgnoreCase("list")){
 			int pnum = 1;
 			if (arg2.matches("[1-9]+[1-9]*")) pnum = Integer.parseInt(arg2);
-			plg.album.printList(p,arg1, pnum);
+			album.printList(p,arg1, pnum);
 
 		} else if (cmd.equalsIgnoreCase("paint")){
 			if (!COWoolSelect.isRegionSelected(p)) {
@@ -317,7 +359,7 @@ public class COCmd implements CommandExecutor{
 					u.PrintMSG(p, "msg_checkdimensions");
 					return true;
 				}
-				short mapid = plg.album.addImage(p.getName(), arg2, img, false, true);
+				short mapid = album.addImage(p.getName(), arg2, img, false, true);
 				if (mapid>=0){
 					p.getItemInHand().setType(Material.MAP);
 					p.getItemInHand().setDurability(mapid);
@@ -338,14 +380,14 @@ public class COCmd implements CommandExecutor{
 			Location loc1 = COWoolSelect.getP1(p);
 			Location loc2 = COWoolSelect.getP2(p);
 			if ((p.getItemInHand()!=null)&&(p.getItemInHand().getType()==Material.MAP)&&
-					plg.album.isObscuraMap(p.getItemInHand())){
+					album.isObscuraMap(p.getItemInHand())){
 
 				short mapid = p.getItemInHand().getDurability();
 
-				if (plg.album.isOwner(mapid, p)){
+				if (album.isOwner(mapid, p)){
 					BufferedImage img = ic.createPixelArt2D(p,loc1, loc2, false,plg.burnpaintedwool);
 					if ((img.getWidth()>=plg.minpixelart)&&((img.getHeight()>=plg.minpixelart))){
-						plg.album.updateImage(mapid, p.getName(), arg2, img, false);
+						album.updateImage(mapid, p.getName(), arg2, img, false);
 						p.setItemInHand(COCamera.setName(p.getItemInHand(), arg2));
 						u.PrintMSG(p, "msg_newmapcreated",mapid);
 					} else u.PrintMSG(p, "msg_cannotcreatemap"); 
@@ -357,8 +399,8 @@ public class COCmd implements CommandExecutor{
 		} else if (cmd.equalsIgnoreCase("owner")){
 			if (arg1.matches("[0-9]*")){
 				short id = Short.parseShort(arg1);
-				if (plg.album.isOwner(id, p)){
-					plg.album.setOwner(id, arg2);
+				if (album.isOwner(id, p)){
+					album.setOwner(id, arg2);
 					u.PrintMSG(p, "msg_ownerset",id+";"+arg2);
 				} else u.PrintMSG(p, "msg_owurnotowner",Short.toString(id),'c','4');
 			} else u.PrintMSG(p, "msg_acneedmap");
@@ -397,22 +439,27 @@ public class COCmd implements CommandExecutor{
 				u.PrintMSG(p, "msg_imgsavefail");
 			}
 		} else if (cmd.equalsIgnoreCase("rename")){
-			if (arg1.matches("[0-9]*")) {
-				short id = Short.parseShort(arg1);
-				if (plg.album.isObscuraMap(id)){
-					if (plg.album.isOwner(id, p)){
-						plg.album.setPictureName(id, arg2);
-						u.PrintMSG(p, "msg_renamed", arg1+";"+arg2);
-					} else u.PrintMSG(p, "msg_owurnotowner",Short.toString(id),'c','4');		
-				} else u.PrintMSG(p, "msg_unknownpicid", arg1,'c','4');
-			} else u.PrintMSG(p, "msg_wrongnumber", arg1,'c','4');
-			
+			String txt = arg2;
+			short id = -1;
+			if ((!arg1.isEmpty())&&arg1.matches("[0-9]*")) id = Short.parseShort(arg1);
+			else if (album.isObscuraMap(p.getItemInHand())) {
+				id = p.getItemInHand().getDurability();
+				if (!arg1.isEmpty()) txt = arg1+" "+txt;
+			}
+			if ((id>0)&&album.isObscuraMap(id)){
+				if (album.isOwner(id, p)){
+					album.setPictureName(id, txt);
+					u.PrintMSG(p, "msg_renamed", id+";"+txt);
+					plg.rh.forceUpdate(id);
+					COCamera.updateInventoryItems(plg, p.getInventory());
+				} else u.PrintMSG(p, "msg_owurnotowner",Short.toString(id),'c','4');		
+			} else u.PrintMSG(p, "msg_acneedmap", 'c');
 		} else if (cmd.equalsIgnoreCase("head")){
-			plg.album.developPortrait(p,p.getName(),arg1,arg2);
+			album.developPortrait(p,p.getName(),arg1,arg2);
 		} else if (cmd.equalsIgnoreCase("top")){
-			plg.album.developTopHalfPhoto(p,p.getName(),arg1,arg2);
+			album.developTopHalfPhoto(p,p.getName(),arg1,arg2);
 		} else if (cmd.equalsIgnoreCase("full")){
-			plg.album.developPhoto(p,p.getName(),arg1,arg2);
+			album.developPhoto(p,p.getName(),arg1,arg2);
 		} else return false;
 		return true;
 

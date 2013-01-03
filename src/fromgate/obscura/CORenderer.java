@@ -23,17 +23,16 @@
 
 package fromgate.obscura;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
-import org.bukkit.map.MinecraftFont;
+
 
 public class CORenderer extends MapRenderer {
 	Obscura plg;
-	Image img;
+	BufferedImage img;
 
 	public CORenderer (Obscura plg, final BufferedImage img){
 		super (true);
@@ -47,8 +46,22 @@ public class CORenderer extends MapRenderer {
 			for (int j = 0; j < 128; j++) 
 				for (int i = 0; i < 128; i++)
 					canvas.setPixel(i, j, (byte) 0);
-			if (this.img != null) canvas.drawImage(0, 0, img);
-			canvas.drawText(2, 127-MinecraftFont.Font.getHeight(), MinecraftFont.Font, "§54;Camera Obscura");
+			if (this.img != null) {
+				short id = map.getId();
+				//if ((plg.album.isNameShown(id))) drawImage(canvas, plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
+				//else drawImage(canvas, img);
+				if ((plg.album.isNameShown(id))) canvas.drawImage(0,0, plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
+				else canvas.drawImage(0, 0, img);
+			}
 		}
 	}
+	
+	
+/*	public void drawImage(MapCanvas canvas, BufferedImage img){
+		int mx = Math.min(128, img.getWidth());
+		int my = Math.min(128, img.getHeight());
+		for (int x = 0; x<mx; x++)
+			for (int y = 0; y<my; y++)
+				canvas.setPixel(x, y, MapPalette.matchColor(new Color (img.getRGB(x, y))));
+	} */
 }

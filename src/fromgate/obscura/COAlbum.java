@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -58,16 +59,26 @@ public class COAlbum {
 		String name; //картинки
 		String owner; // владелец/создател
 		boolean allowcopy; // разрешно/зпрещено копирование
+		boolean showname;
 
 		public COPhoto (String owner, String name, boolean allowcopy){
 			this.name = name;
 			this.allowcopy = allowcopy;
 			this.owner = owner;
+			this.showname = plg.default_showname;
 		}
-		public COPhoto (String owner, String name){
+		/*public COPhoto (String owner, String name){
 			this.name = name;
 			this.allowcopy = false;
 			this.owner = owner;
+			this.showname = false;
+		}*/
+		
+		public COPhoto (String owner, String name, boolean allowcopy, boolean showname){
+			this.name = name;
+			this.allowcopy = allowcopy;
+			this.owner = owner;
+			this.showname = showname;
 		}
 
 
@@ -77,7 +88,7 @@ public class COAlbum {
 	 * Создание карты, forsnew=true - заставляет создавать именно новую (не используя старые, удаленные карты)
 	 * 
 	 */
-	public short createMap (BufferedImage image, boolean reusedeleted){
+	public short createMap (BufferedImage image, boolean reusedeleted, String name, boolean showname){
 		if ((!reusedeleted)||deletedmaps.isEmpty()||(deletedmaps.size()==0)) return createNewMap (image);
 		short id = deletedmaps.get(0);
 		deletedmaps.remove(0);
@@ -118,12 +129,15 @@ public class COAlbum {
 	}
 	
 	public void setPictureName (short id, String name){
-		if (album.containsKey(id))
+		if (album.containsKey(id)){
 			album.get(id).name = name;
+			saveAlbum();
+		}
 	}
 	 
 	public String getPictureName (short id){
 		if (album.containsKey(id)) return album.get(id).name;
+		else if (deletedmaps.contains(id)) return ChatColor.stripColor(u.MSG("msg_removedimage",Short.toString(id)));
 		return "";
 	}
 	
@@ -340,7 +354,7 @@ public class COAlbum {
 
 	public short addImage (String owner, String name, BufferedImage image, boolean allowcopy,boolean reusedeleted){
 		if (image==null) return -1;
-		Short id = createMap(image, reusedeleted);
+		Short id = createMap(image, reusedeleted, name, plg.default_showname);
 		album.put(id, new COPhoto (owner, name,allowcopy));
 		saveMapSource(id, image);
 		saveAlbum();
@@ -369,8 +383,8 @@ public class COAlbum {
 			}
 		}
 	}
-
-	public void loadMapSource (short id){
+	
+	public void loadMapSource (short id, String name, boolean showname){
 		if (id<0) return;
 		BufferedImage image = null;
 		File f = new File (plg.getDataFolder()+File.separator+"album"+File.separator+Short.toString(id)+".png");
@@ -396,6 +410,7 @@ public class COAlbum {
 					cfg.set(Short.toString(id)+".owner", ph.owner);
 					cfg.set(Short.toString(id)+".name", ph.name);
 					cfg.set(Short.toString(id)+".allow-copy", ph.allowcopy);
+					cfg.set(Short.toString(id)+".show-name", ph.showname);
 				}
 				if (deletedmaps.size()>0)
 					cfg.set("deleted-maps", deletedmaps);
@@ -415,12 +430,13 @@ public class COAlbum {
 				for (String str_id : cfg.getKeys(false)){
 					if (str_id.matches("[0-9]*")) {
 						short id = Short.parseShort(str_id);
-						loadMapSource(id);
-						
+						String name =cfg.getString(str_id+".name");
+						boolean showname =cfg.getBoolean(str_id+".show-name",true); 
+						loadMapSource(id,name, showname);
 						album.put(id, new COPhoto (cfg.getString(str_id+".owner","unknown"),
-								cfg.getString(str_id+".name"),
-								cfg.getBoolean(str_id+".allow-copy")));
-						
+								name,
+								cfg.getBoolean(str_id+".allow-copy",false),
+								showname));
 					} else if (str_id.equalsIgnoreCase("deleted-maps")){
 						List<String> strlist = new ArrayList<String>();
 						deletedmaps.clear();
@@ -437,9 +453,13 @@ public class COAlbum {
 	public void printList(Player p, String owner, int pnum){
 		if (album.size()>0){
 			List<String> ln = new ArrayList<String>();
-			for (short id : album.keySet()) 
-				if (album.get(id).owner.equalsIgnoreCase(owner))
-					ln.add("&a"+id+" [&2"+album.get(id).owner+"&a] : &e"+album.get(id).name);
+			for (short id : album.keySet()){ 
+				COPhoto ph = album.get(id);
+				
+				if (ph.owner.equalsIgnoreCase(owner))
+					ln.add("&a"+id+" [&2"+ph.owner+"&a] : &e"+ph.name+ " &a("+u.EnDis(u.MSGnc("msg_allowcopy"), ph.allowcopy)+
+							"&a, "+u.EnDis(u.MSGnc("msg_displayname"), ph.showname)+"&a)");
+			}
 			
 			u.printPage(p, ln, pnum, "msg_albumlist", "msg_footer", true);
 		} else u.PrintMSG(p, "msg_albumempty",'6');
@@ -458,6 +478,17 @@ public class COAlbum {
 		if (!album.containsKey(id)) return true;
 		return album.get(id).allowcopy;
 	}
+	
+	public boolean isNameShown(short id){
+		if (!album.containsKey(id)) return plg.default_showname;
+		return album.get(id).showname;
+	}
+
+	public void setShowName (short id, boolean showname){
+		if (album.containsKey(id))
+			album.get(id).showname = showname;
+	}
+	
 	
 	public boolean isLimitOver(Player p){
 		if (p.hasPermission("camera-obscura.owner.limit")) return false;

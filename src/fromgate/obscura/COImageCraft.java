@@ -20,9 +20,31 @@
  * 
  */
 
+
+/* ChangeLog:
+ *  0.0.1 
+ *  + Release
+ *  
+ *  0.0.2
+ *  + Recoded from craftbukkit library to BukkitAPI (Name support)
+ *  
+ *  0.0.3
+ *  + Ability to show/hide picture names
+ *  + Prevent placing stone button at noteblock (using shift-click)
+ *  
+ *  TODO
+ *  - Auto rename maps in hand
+ *  - Text layers
+ *  
+ * 
+ * 
+ */
+
 package fromgate.obscura;
 
 
+import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -87,11 +109,11 @@ public class COImageCraft {
 		return img;
 	}
 
-	
+
 	public BufferedImage getImageByName (String filename){
 		return getImageFromDirByName (plg.d_images,filename);
 	}
-	
+
 	public BufferedImage getBackgroundByName (String filename){
 		return getImageFromDirByName (plg.d_backgrounds,filename);
 	}
@@ -108,7 +130,7 @@ public class COImageCraft {
 				img = ImageIO.read(f);
 			} catch (Exception e){
 			}
-		
+
 		if (img == null) {
 			f = new File (dir+"default.png");
 			if (f.exists())
@@ -135,7 +157,6 @@ public class COImageCraft {
 		if (f.exists()){
 			try {
 				img = ImageIO.read(f);
-				
 			} catch (Exception e){
 			}
 		}
@@ -146,8 +167,8 @@ public class COImageCraft {
 			} catch (Exception e){
 			}
 		}
-		
-		
+
+
 
 		f = new File (plg.d_skins+"default.png");
 		if ((img == null)&&f.exists()){
@@ -330,7 +351,7 @@ public class COImageCraft {
 		else bg = plg.default_background;
 		return getBackgroundByName(bg);
 	}
-	
+
 	public BufferedImage getBackground (String background){
 		String bg = "default";
 		if (background.isEmpty()||background.equalsIgnoreCase("default")) bg = "default";
@@ -338,7 +359,7 @@ public class COImageCraft {
 		else bg = background;
 		return getBackgroundByName(bg);
 	}
-	
+
 
 	private String getRandomBackgroundName() {
 		File dir = new File (plg.d_backgrounds);
@@ -409,15 +430,15 @@ public class COImageCraft {
 		return 0;
 	}
 
-	
+
 	private boolean removeWoolAndBurn(Player p, Block b){
 		if (b.getType()!=Material.WOOL) return false;
 		if ((!p.hasPermission("camera-obscura.fireproof-wool"))&&plg.u.placeBlock(b, p, Material.AIR, (byte) 0, false)) return false;
 		b.getWorld().playEffect(b.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
 		return true;
 	}
-    
-	
+
+
 	public BufferedImage createPixelArt2D (Player p, Location loc1, Location loc2, boolean resize, boolean burn){
 		BufferedImage img = null;
 		World w = loc1.getWorld();
@@ -446,7 +467,7 @@ public class COImageCraft {
 		if (((sx*sx)+(sy*sy)+(sz*sz))!=2) return null; 
 
 		if (burn) p.getWorld().playSound(p.getLocation(), Sound.FIRE, 1, 1);
-		
+
 		switch (getDirection(x1, y1, z1, x2, y2, z2)){
 		case 0:
 			hx = Math.max(x1, x2)-Math.min(x1, x2)+1;
@@ -463,7 +484,7 @@ public class COImageCraft {
 							if (removeWoolAndBurn(p, b)) rgbcolor = woolDataToRGB(data); 
 						} else	rgbcolor = woolDataToRGB(data);
 					}
-					
+
 					img.setRGB(x, z, rgbcolor);
 				}
 			break;
@@ -524,11 +545,27 @@ public class COImageCraft {
 	}
 
 	public int getDirection (int x1, int y1, int z1, int x2, int y2, int z2){
-		int result = -1;
 		if (y1==y2) return 0; 		// 0  - y1=y2 : x1,z1 to x2,z2 (горизонтальная)
 		if (z1==z2) return 1; 		// 1  - z1=z2 : x1,y1 to x2,y2
 		if (x1==x2) return 2;  		// 2  - x1=x2 : y1,z1 to x2,z2		
-		return result;
+		return -1;
+	}
+
+	public BufferedImage writeTextOnImage (BufferedImage img, int x, int y, String fontname, int fontsize, String color, boolean outline, String stroke_color,String text){
+		BufferedImage image = new BufferedImage (img.getColorModel(), img.copyData(null), img.getColorModel().isAlphaPremultiplied(), null);
+		Graphics g = image.getGraphics();
+		Font font = new Font(fontname, Font.PLAIN, fontsize);
+		g.setFont(font);
+		if (outline) {
+			g.setColor(java.awt.Color.decode(stroke_color));
+			g.drawString(text, x-1, y);
+			g.drawString(text, x+1, y);
+			g.drawString(text, x, y-1);
+			g.drawString(text, x, y+1);
+		}
+		g.setColor(java.awt.Color.decode(color));
+		g.drawString(text, x, y);
+		return image;
 	}
 
 }
