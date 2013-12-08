@@ -24,7 +24,6 @@ package fromgate.obscura;
 import java.io.File;
 import java.io.IOException;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Material;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -32,17 +31,37 @@ import org.bukkit.plugin.java.JavaPlugin;
  * Изменения:
  * 0.1.0
  * - выпуск плагина
- * 0.1.1
+ *  * 0.1.1
  * - апдейт до 1.4.5 и более поздних
  * 0.1.2
  * - Фикс установки кнопки на нотные блоки (с шифтом)
  * - Отображение названия картинки на карте (настраивается щрифт, цвет, обводка)
  * - Автосмена названия итемов (карты, фотоаппараты, фотобумага)
  * 
+ * 0.1.2/3
+ * - Исправлена ситуация с несохранением настроек отображения карты
+ * - Исправлена ошибка с названием фотокамеры (обзывалась фотобумагой)
+ * - Исправлена ошибка при которой только Опы могли пользоваться стационарной камерой
+ * 
+ * 0.1.3
+ * - Смена пермишенов: camera-obscura.image - /photo image
+ *                     camera-obscura.files - /photo files
+ *                     camera-obscura.files.autocreate
+ *                     camera-obscura.files.all
+ * - команда /photo files теперь поддерживает ещё и выбор персональной директории [p:имя]
+ * 
+ * 0.2.0
+ * - Добавлена возможность "нарезки" больших файлов
+ * - Новый пермишен: camera-obscura.image.large - дает возможность создавать "большие картины"
+ * - При подгрузке большого файла на одну карту - он меняет размер
+ * - Изменен подход к "уникальным" предметам. Теперь они определяются на имя, а не по нестандартному значению data 
+ * 
  * TODO
- * - Авто переделка удаленных карт в фотобумагу?   
+ * - Авто переделка удаленных карт в фотобумагу? Автодроп из рамок удаленных картин?  
  * - Возможность перерисовывать/перефотографировать все карты при наличии пермишена
- * - Возможность отображать название карты (настраивается для каждой индивидуально)
+ * - HD-скины
+ * - Отключить стаканье фотобумаги
+ * - персональные директори для картинок
  * 	
  */
 
@@ -64,6 +83,10 @@ import org.bukkit.plugin.java.JavaPlugin;
  * camera-obscura.set-sign
  * camera-obscura.tripod-camera.build
  * camera-obscura.fireproof-wool
+ * camera-obscura.image - /photo image
+ * camera-obscura.files - /photo files
+ * camera-obscura.files.autocreate
+ * camera-obscura.files.all
  * 
  */
 
@@ -77,13 +100,19 @@ public class Obscura extends JavaPlugin {
 	private String dir_images="images";
 	private String dir_backgrounds = "backgrounds";
 	private String dir_skins = "skins";
+	
 
 	/////////////////////////////////////////////////
-	int brush_id = Material.FEATHER.getId();
-	int photopaper_id = 339;    //395 - empty_map, 339 - paper
-	short photopaper_data = 1;    //395 - empty_map, 339 - paper
-	int camera_id = 347;     //по умолчанию, фотоаппарат - это часы с data = 1
-	short camera_data = 1;
+
+	public static Obscura instance;
+	
+	String brush = "FEATHER";
+	String photopaper = "Photo_paper&1&2&3$339";
+	String camera = "Photo_camera&1&2&3$347";
+	int max_width =  7; //896
+	int max_height = 5; //640 
+	
+	
 	boolean reusedeleted = true;
 	boolean use_recipes = true;
 	boolean obscura_drop = true; //будет ли камера на штативе выбрасывать фотоаппарат при разрушении?
@@ -92,11 +121,13 @@ public class Obscura extends JavaPlugin {
 	String default_background = "default"; // "random" - для случайного, реализовать
 	int picsperowner = 15;
 	boolean burnpaintedwool = false;
+	boolean personalfolders = false;
+	boolean pf_autocreate = false;
 
 	float focus_1 = 2.0f;
 	float focus_2 = 3.8f;
 
-	String steeve = "default_skin.png";
+	String steve = "steve.png";
 	String skinurl = "http://s3.amazonaws.com/MinecraftSkins/";
 
 	//Настройка отображения заголовка
@@ -108,6 +139,8 @@ public class Obscura extends JavaPlugin {
 	String stroke_color = "#FFFFFF";
 	int name_x = 1;
 	int name_y = 122;
+	
+	boolean useOldPalette = false;
 
 
 
@@ -122,11 +155,11 @@ public class Obscura extends JavaPlugin {
 
 
 	COUtil u;
-	COImageCraft ic;
+	ImageCraft ic;
 	COAlbum album;
 	COCmd cmd;
 	COListener l;
-	CORenderHistory rh;
+	RenderHistory rh;
 
 
 
@@ -134,12 +167,15 @@ public class Obscura extends JavaPlugin {
 	public void onEnable() {
 		loadCfg();
 		saveCfg();
-
+		instance = this;
 		d_images = getDataFolder()+File.separator+dir_images+File.separator;
 		d_album = getDataFolder()+File.separator+dir_album+File.separator;
 		d_skins = getDataFolder()+File.separator+dir_skins+File.separator;
 		d_backgrounds = getDataFolder()+File.separator+dir_backgrounds+File.separator;
-
+		WoolSelect.init(this);
+		ItemUtil.init(this);
+		Palette.init(useOldPalette);
+		
 		File dir = new File (d_images);
 		if (!dir.exists()) dir.mkdirs();
 		dir = new File (d_album);
@@ -149,17 +185,18 @@ public class Obscura extends JavaPlugin {
 		dir = new File (d_skins);
 		if (!dir.exists()) dir.mkdirs();
 
+		
 		u = new COUtil (this, version_check, language_save, language, "camera-obscura", "CameraObscura", "photo", "&3[CO]&f ");
-		rh = new CORenderHistory ();
-		ic = new COImageCraft (this);
+		rh = new RenderHistory ();
+		ic = new ImageCraft (this);
 		album = new COAlbum (this);
 		l = new COListener (this);
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvents(l, this);
 		cmd = new COCmd (this);
 		getCommand("photo").setExecutor(cmd);
-		if (use_recipes) COCamera.initRecipes(this);
-		vault_eco = COCamera.setupEconomy(this);
+		if (use_recipes) COCamera.initRecipes();
+		vault_eco = COCamera.setupEconomy();
 		if (!vault_eco) u.log("Connection to Vault failed!");
 
 		try {
@@ -174,11 +211,6 @@ public class Obscura extends JavaPlugin {
 		getConfig().set("general.check-updates",version_check);
 		getConfig().set("general.language",language);
 		getConfig().set("general.language-save",language_save);
-		getConfig().set("items.brush-id",brush_id);
-		getConfig().set("items.photo-paper.id",photopaper_id);
-		getConfig().set("items.photo-paper.data",photopaper_data);
-		getConfig().set("items.photo-camera.id",camera_id);
-		getConfig().set("items.photo-camera.data",camera_data);
 		getConfig().set("items.use-recipes", use_recipes);
 		getConfig().set("items.obscura-drop", obscura_drop);
 		getConfig().set("pictures.reuse-deleted-maps", reusedeleted );
@@ -186,8 +218,13 @@ public class Obscura extends JavaPlugin {
 		getConfig().set("pictures.default-background",default_background);
 		getConfig().set("pictures.pictures-per-owner",picsperowner);
 		getConfig().set("pictures.burn-pixel-art-wool", burnpaintedwool);
-		getConfig().set("pictures.default-skin",steeve);
+		getConfig().set("pictures.default-skin",steve);
 		getConfig().set("pictures.skin-url",skinurl);
+		getConfig().set("pictures.personal-folders.enable",personalfolders);
+		getConfig().set("pictures.personal-folders.auto-create",pf_autocreate);
+		getConfig().set("pictures.muti-map.max-width", max_width);
+		getConfig().set("pictures.muti-map.max-height", max_height);
+		getConfig().set("pictures.use-old-pallete", useOldPalette);
 		getConfig().set("picture-name.show-at-new-pictures",default_showname);
 		getConfig().set("picture-name.x",name_x);
 		getConfig().set("picture-name.y",name_y);
@@ -199,25 +236,25 @@ public class Obscura extends JavaPlugin {
 		saveConfig();
 	}
 
-	public void loadCfg(){
+    public void loadCfg(){
 		version_check = getConfig().getBoolean("general.check-updates",true);
 		language = getConfig().getString("general.language","english");
 		language_save = getConfig().getBoolean("general.language-save",false);
-		brush_id = getConfig().getInt("items.brush-id",Material.FEATHER.getId());
-		photopaper_id = getConfig().getInt("items.photo-paper.id",339);
-		photopaper_data = (short) getConfig().getInt("items.photo-paper.data",1);
-		camera_id = getConfig().getInt("items.photo-camera.id",347);
-		camera_data = (short) getConfig().getInt("items.photo-camera.data",1);
-		use_recipes = getConfig().getBoolean ("items.use-recipes", true);
+		max_width=getConfig().getInt("pictures.muti-map.max-width", max_width);
+		max_height= getConfig().getInt("pictures.muti-map.max-height",max_height);
+		useOldPalette=getConfig().getBoolean("pictures.use-old-pallete", useOldPalette);
+        use_recipes = getConfig().getBoolean ("items.use-recipes", true);
 		obscura_drop = getConfig().getBoolean ("items.obscura-drop", true);
 		reusedeleted  = getConfig().getBoolean ("pictures.reuse-deleted-maps", true);
 		minpixelart = getConfig().getInt("pictures.minimal-pixel-art-size",16);
 		default_background = getConfig().getString("pictures.default-background","default");
 		picsperowner = getConfig().getInt("pictures.pictures-per-owner",15);
 		burnpaintedwool   = getConfig().getBoolean ("pictures.burn-pixel-art-wool", true);
-		steeve = getConfig().getString("pictures.default-skin","default_skin.png");
+		steve = getConfig().getString("pictures.default-skin","default_skin.png");
 		skinurl = getConfig().getString("pictures.skin-url","http://s3.amazonaws.com/MinecraftSkins/");
-		default_showname=getConfig().getBoolean("picture-name.show-at-new-pictures",true);
+		default_showname=getConfig().getBoolean("picture-name.show-at-new-pictures",false);
+		personalfolders=getConfig().getBoolean("pictures.personal-folders.enable",false);
+		pf_autocreate=getConfig().getBoolean("pictures.personal-folders.auto-create",false);
 		name_x = getConfig().getInt("picture-name.x",1);
 		name_y = getConfig().getInt("picture-name.y",122);
 		font_name = getConfig().getString("picture-name.font-name","Serif");
@@ -226,11 +263,5 @@ public class Obscura extends JavaPlugin {
 		stroke =getConfig().getBoolean("picture-name.stroke",true);
 		stroke_color = getConfig().getString("picture-name.stroke-color","#FFFFFF");
 	}
-
-
-
-
-
-
 
 }

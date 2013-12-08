@@ -22,6 +22,8 @@
 
 package fromgate.obscura;
 
+import java.io.File;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -64,10 +66,14 @@ public class COListener implements Listener {
 	public void onPlayerJoin (PlayerJoinEvent event){
 		Player p = event.getPlayer();
 		plg.ic.updateSkinCache(p);
-		u.UpdateMsg(p);
+		u.updateMsg(p);
 		plg.rh.clearHistory(p);
-		COWoolSelect.clearSelection(plg, p);
-		COCamera.updateInventoryItems(plg, p.getInventory());
+		WoolSelect.clearSelection(p);
+		COCamera.updateInventoryItems(p.getInventory());
+		if (plg.personalfolders&&plg.pf_autocreate&&p.hasPermission("camera-obscura.files.autocreate")){
+			File dir = new File(plg.d_images+p.getName()+File.separator);
+			if (!dir.exists()) dir.mkdirs();
+		}
 	}
 	
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
@@ -76,19 +82,19 @@ public class COListener implements Listener {
 	}
 	
 
-	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	@SuppressWarnings("deprecation")
+    @EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBrush (PlayerInteractEvent event){
 		if ((event.getAction() != Action.LEFT_CLICK_BLOCK)&&(event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
 		Player p = event.getPlayer();
-		if ((p.getItemInHand()==null)||(p.getItemInHand().getTypeId()!=COWoolSelect.wand)) return;
-		if (!COWoolSelect.getBrushMode(p)) return;
+		if ((p.getItemInHand()==null)||(p.getItemInHand().getTypeId()!=WoolSelect.wand)) return;
+		if (!WoolSelect.getBrushMode(p)) return;
 		if (event.getAction() == Action.LEFT_CLICK_BLOCK){
-			COWoolSelect.setP1(plg, p, event.getClickedBlock().getLocation());
-			u.PrintMSG(p, "msg_selectp1");
-
+			WoolSelect.setP1(p, event.getClickedBlock().getLocation());
+			u.printMSG(p, "msg_selectp1");
 		} else if (event.getAction() == Action.RIGHT_CLICK_BLOCK){
-			COWoolSelect.setP2(plg, p, event.getClickedBlock().getLocation());
-			u.PrintMSG(p, "msg_selectp2");
+			WoolSelect.setP2(p, event.getClickedBlock().getLocation());
+			u.printMSG(p, "msg_selectp2");
 		}
 		event.setCancelled(true);
 	}
@@ -104,14 +110,14 @@ public class COListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onCraftPicturePaperAndCamera (PrepareItemCraftEvent event){
 		ItemStack item = event.getRecipe().getResult();
-		if ((item.getType()==Material.EMPTY_MAP)&&(COCamera.inventoryContainsPicture(plg, event.getInventory())))
+		if ((item.getType()==Material.EMPTY_MAP)&&(COCamera.inventoryContainsPicture(event.getInventory())))
 			event.getInventory().setResult(new ItemStack (Material.AIR)); 
-		else if (COCamera.isCamera(plg, item))
-			event.getInventory().setResult(COCamera.newCamera(plg));
-		else if (COCamera.isPhotoPaper(plg, item))
-			event.getInventory().setResult(COCamera.newPhotoPaper(plg, item.getAmount()));
-		else if ((COCamera.inventoryContains(event.getInventory(), COCamera.newPhotoPaper(plg)))||
-				(COCamera.inventoryContains(event.getInventory(), COCamera.newCamera(plg))))
+		else if (COCamera.isCamera(item))
+			event.getInventory().setResult(COCamera.newCamera());
+		else if (COCamera.isPhotoPaper(item))
+			event.getInventory().setResult(COCamera.newPhotoPaper(item.getAmount()));
+		else if ((COCamera.inventoryContainsPaper (event.getInventory()))||
+				(COCamera.inventoryContainsCamera(event.getInventory())))
 			event.getInventory().setResult(new ItemStack (Material.AIR));
 	}
 
@@ -119,7 +125,7 @@ public class COListener implements Listener {
 	public void onTakePicture (PlayerInteractEntityEvent event){
 		Player p = event.getPlayer();
 		if (!p.hasPermission("camera-obscura.handy.use")) return;
-		if (!COCamera.isCameraInHand(plg, p)) return;
+		if (!COCamera.isCameraInHand(p)) return;
 		if ((event.getRightClicked()==null)||(!(event.getRightClicked() instanceof Player))) return;
 		Player model = (Player) event.getRightClicked();
 		double d = p.getLocation().distance(model.getLocation());
@@ -135,11 +141,9 @@ public class COListener implements Listener {
 		Block cb = event.getClickedBlock();
 		if (event.getAction()!=Action.RIGHT_CLICK_BLOCK) return;
 		if (cb.getType()!=Material.STONE_BUTTON) return;
-
 		if ((p.getItemInHand()==null)||
-				(!COCamera.isPhotoPaper(plg, p.getItemInHand()))) return;
-		if (COCamera.isClickedButtonIsLens(plg,event.getClickedBlock())){
-
+				(!COCamera.isPhotoPaper(p.getItemInHand()))) return;
+		if (COCamera.isClickedButtonIsLens(event.getClickedBlock())){
 			String background = plg.default_background;
 			double price = 0;
 			String owner = "unknown";
@@ -162,12 +166,12 @@ public class COListener implements Listener {
 							plg.economy.depositPlayer(owner, price);
 							Player tp = Bukkit.getPlayerExact(owner);
 							if ((tp != null)&&(tp.isOnline()))
-								u.PrintMSG(p, "msg_youreceived",plg.economy.format(price)+";"+p.getName()+";"+plg.economy.format(plg.economy.getBalance(p.getName()))); //You have paid %1% for photgraphy! (Balance: %2%)
+								u.printMSG(p, "msg_youreceived",plg.economy.format(price),p.getName(),plg.economy.format(plg.economy.getBalance(p.getName()))); //You have paid %1% for photgraphy! (Balance: %2%)
 						}
 						plg.economy.withdrawPlayer(p.getName(), price);
-						u.PrintMSG(p, "msg_youpaid",plg.economy.format(price)+";"+plg.economy.format(plg.economy.getBalance(p.getName()))); 
+						u.printMSG(p, "msg_youpaid",plg.economy.format(price),plg.economy.format(plg.economy.getBalance(p.getName()))); 
 					} else {
-						u.PrintMSG(p, "msg_youhavenotmoney");
+						u.printMSG(p, "msg_youhavenotmoney");
 						return;
 					}
 				} 
@@ -200,7 +204,7 @@ public class COListener implements Listener {
 	@EventHandler(priority=EventPriority.LOW, ignoreCancelled = true)
 	public void onPhotoPaperRightClickAir (PlayerInteractEvent event){
 		if (plg.photopaper_id != Material.EMPTY_MAP.getId()) return;
-		if (!COCamera.isPhotoPaper(plg, event.getPlayer().getItemInHand())) return;
+		if (!COCamera.isPhotoPaper(event.getPlayer().getItemInHand())) return;
 
 		if ((event.getAction() == Action.RIGHT_CLICK_AIR)||
 				(event.getAction() == Action.RIGHT_CLICK_BLOCK))
@@ -209,18 +213,17 @@ public class COListener implements Listener {
 	} */
 
 
-	@EventHandler(priority=EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority=EventPriority.HIGH, ignoreCancelled = true)
 	public void onBreakTripodCamera (BlockBreakEvent event){
 		if (!plg.obscura_drop) return;
 		if (event.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
 		Block b = event.getBlock();
-		if (COCamera.isBlockIsPartOfCamera(plg, b)){
+		if (COCamera.isBlockIsPartOfCamera(b)){
 			if (b.getType()!=Material.STONE_BUTTON) b = COCamera.getLensFromTripodCamera(b);
 			if (b==null) return;
 			b.getDrops().clear();
 			b.setType(Material.AIR);
-			ItemStack camera = COCamera.setName(new ItemStack (plg.camera_id, plg.camera_data), "Photo Camera");
-			camera.setDurability(plg.camera_data);
+			ItemStack camera = COCamera.newCamera();
 			World w = b.getWorld();
 			Item dropped = w.dropItemNaturally(b.getLocation(), camera);
 			w.playSound(dropped.getLocation(),Sound.STEP_LADDER,1,1);
@@ -275,19 +278,11 @@ public class COListener implements Listener {
 		if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 		if (event.getClickedBlock().getType() != Material.NOTE_BLOCK) return;
 		if (COCamera.isButtonPlacedOnTheNoteBlock(event.getClickedBlock())) return;
-		if (!COCamera.isCameraInHand(plg, p)) return;
+		if (!COCamera.isCameraInHand(p)) return;
 		if (event.getClickedBlock().getRelative(BlockFace.DOWN).getType() != Material.FENCE) return;
 
 		Block b = event.getClickedBlock().getRelative(event.getBlockFace());
 		byte dirdata = 0; 
-		
-		//1.4.2-R0.2
-		/*if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 1;
-		else if (event.getBlockFace() == BlockFace.NORTH) dirdata = 2;
-		else if (event.getBlockFace() == BlockFace.WEST) dirdata = 3;
-		else if (event.getBlockFace() == BlockFace.EAST) dirdata = 4;*/
-
-		//1.4.2-R0.3
 		if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 3;
 		else if (event.getBlockFace() == BlockFace.NORTH) dirdata = 4;
 		else if (event.getBlockFace() == BlockFace.WEST) dirdata = 2;
@@ -295,23 +290,25 @@ public class COListener implements Listener {
 		
 		if (dirdata == 0) return;
 		if (u.placeBlock(b, p, Material.STONE_BUTTON, dirdata, false)) return;
-		if (!u.removeItemInHand(p, plg.camera_id, plg.camera_data, 1)) b.setType(Material.AIR);
+		if (!ItemUtil.removeItemInHand(p, plg.camera)) b.setType(Material.AIR);
 
 	}
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onOpenInventory (InventoryOpenEvent event){
-		COCamera.updateInventoryItems(plg, event.getInventory());
+		COCamera.updateInventoryItems(event.getInventory());
 	}
 
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onPlayerPickupItemEvent (PlayerPickupItemEvent event){
-		COCamera.updateItemName(plg, event.getItem().getItemStack());
+		COCamera.updateItemName(event.getItem().getItemStack());
 	}
 	
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onPlayerItemHeld (PlayerItemHeldEvent event){
-		COCamera.updateItemName(plg,event.getPlayer().getInventory().getItem(event.getNewSlot()));
+		COCamera.updateItemName(event.getPlayer().getInventory().getItem(event.getNewSlot()));
+		
 	}
+	
 
 }

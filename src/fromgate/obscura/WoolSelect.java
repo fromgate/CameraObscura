@@ -27,18 +27,25 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 
-public class COWoolSelect {
+public class WoolSelect {
+    
+    private static JavaPlugin plugin;
+    
+    public static void init (JavaPlugin plg){
+        plugin = plg;
+    }
+    
 	
 	public static int wand=288; //feather
 
-	public static void setBrushMode(Plugin plg, Player p, boolean brmode){
-		if (brmode) p.setMetadata("obscura-brush-mode", new FixedMetadataValue (plg, true));
+	public static void setBrushMode(Player p, boolean brmode){
+		if (brmode) p.setMetadata("obscura-brush-mode", new FixedMetadataValue (plugin, true));
 		else {
-			if (p.hasMetadata("obscura-brush-mode")) p.removeMetadata("obscura-brush-mode", plg);
-			if (p.hasMetadata("obscura-sel-p1")) p.removeMetadata("obscura-sel-p1", plg);
-			if (p.hasMetadata("obscura-sel-p2")) p.removeMetadata("obscura-sel-p2", plg);
+			if (p.hasMetadata("obscura-brush-mode")) p.removeMetadata("obscura-brush-mode", plugin);
+			if (p.hasMetadata("obscura-sel-p1")) p.removeMetadata("obscura-sel-p1", plugin);
+			if (p.hasMetadata("obscura-sel-p2")) p.removeMetadata("obscura-sel-p2", plugin);
 		}
 	}
 
@@ -47,18 +54,18 @@ public class COWoolSelect {
 		return p.hasMetadata("obscura-brush-mode");
 	}
 	
-	public static void setP1(Plugin plg, Player p, Location loc){
-		 p.setMetadata("obscura-sel-p1-world", new FixedMetadataValue (plg, loc.getWorld().getName()));
-		 p.setMetadata("obscura-sel-p1-x", new FixedMetadataValue (plg, loc.getBlockX()));
-		 p.setMetadata("obscura-sel-p1-y", new FixedMetadataValue (plg, loc.getBlockY()));
-		 p.setMetadata("obscura-sel-p1-z", new FixedMetadataValue (plg, loc.getBlockZ()));
+	public static void setP1(Player p, Location loc){
+		 p.setMetadata("obscura-sel-p1-world", new FixedMetadataValue (plugin, loc.getWorld().getName()));
+		 p.setMetadata("obscura-sel-p1-x", new FixedMetadataValue (plugin, loc.getBlockX()));
+		 p.setMetadata("obscura-sel-p1-y", new FixedMetadataValue (plugin, loc.getBlockY()));
+		 p.setMetadata("obscura-sel-p1-z", new FixedMetadataValue (plugin, loc.getBlockZ()));
 	}
 	
-	public static void setP2(Plugin plg, Player p, Location loc){
-		 p.setMetadata("obscura-sel-p2-world", new FixedMetadataValue (plg, loc.getWorld().getName()));
-		 p.setMetadata("obscura-sel-p2-x", new FixedMetadataValue (plg, loc.getBlockX()));
-		 p.setMetadata("obscura-sel-p2-y", new FixedMetadataValue (plg, loc.getBlockY()));
-		 p.setMetadata("obscura-sel-p2-z", new FixedMetadataValue (plg, loc.getBlockZ()));
+	public static void setP2(Player p, Location loc){
+		 p.setMetadata("obscura-sel-p2-world", new FixedMetadataValue (plugin, loc.getWorld().getName()));
+		 p.setMetadata("obscura-sel-p2-x", new FixedMetadataValue (plugin, loc.getBlockX()));
+		 p.setMetadata("obscura-sel-p2-y", new FixedMetadataValue (plugin, loc.getBlockY()));
+		 p.setMetadata("obscura-sel-p2-z", new FixedMetadataValue (plugin, loc.getBlockZ()));
 	}
 
 	
@@ -85,15 +92,15 @@ public class COWoolSelect {
 		 return null;
 	}
 	
-	public static void clearSelection (Plugin plg, Player p){
-		if (p.hasMetadata("obscura-sel-p1-world")) p.removeMetadata("obscura-sel-p1-world", plg);
-		if (p.hasMetadata("obscura-sel-p1-x")) p.removeMetadata("obscura-sel-p1-x", plg);
-		if (p.hasMetadata("obscura-sel-p1-y")) p.removeMetadata("obscura-sel-p1-y", plg);
-		if (p.hasMetadata("obscura-sel-p1-z")) p.removeMetadata("obscura-sel-p1-z", plg);
-		if (p.hasMetadata("obscura-sel-p2-world")) p.removeMetadata("obscura-sel-p2-world", plg);
-		if (p.hasMetadata("obscura-sel-p2-x")) p.removeMetadata("obscura-sel-p2-x", plg);
-		if (p.hasMetadata("obscura-sel-p2-y")) p.removeMetadata("obscura-sel-p2-y", plg);
-		if (p.hasMetadata("obscura-sel-p2-z")) p.removeMetadata("obscura-sel-p2-z", plg);	}
+	public static void clearSelection (Player p){
+		if (p.hasMetadata("obscura-sel-p1-world")) p.removeMetadata("obscura-sel-p1-world", plugin);
+		if (p.hasMetadata("obscura-sel-p1-x")) p.removeMetadata("obscura-sel-p1-x", plugin);
+		if (p.hasMetadata("obscura-sel-p1-y")) p.removeMetadata("obscura-sel-p1-y", plugin);
+		if (p.hasMetadata("obscura-sel-p1-z")) p.removeMetadata("obscura-sel-p1-z", plugin);
+		if (p.hasMetadata("obscura-sel-p2-world")) p.removeMetadata("obscura-sel-p2-world", plugin);
+		if (p.hasMetadata("obscura-sel-p2-x")) p.removeMetadata("obscura-sel-p2-x", plugin);
+		if (p.hasMetadata("obscura-sel-p2-y")) p.removeMetadata("obscura-sel-p2-y", plugin);
+		if (p.hasMetadata("obscura-sel-p2-z")) p.removeMetadata("obscura-sel-p2-z", plugin);	}
 
 	public static boolean isRegionSelected(Player p){
 		return (p.hasMetadata("obscura-sel-p1-world"))&&(p.hasMetadata("obscura-sel-p2-world"));

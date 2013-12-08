@@ -25,9 +25,11 @@ package fromgate.obscura;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-public class CORenderHistory {
+public class RenderHistory {
 	HashMap<String, Set<Short>> rh = new HashMap<String, Set<Short>>(); 
 	
 	public void clearHistory (Player p){
@@ -56,6 +58,14 @@ public class CORenderHistory {
 			if (rh.get(pn).contains(id)) rh.get(pn).remove(id);
 	}
 	
+	
+	/*
+	 * Send UnRendered map / SpigotFix
+	 */
+	@SuppressWarnings("deprecation")
+    public void sendMap (Player p, short id){
+		if (!isRendered (p,id)) p.sendMap(Bukkit.getMap(id));
+	}
 	
 /*	public void forceUpdateAndSendMap (short id){
 		for (String pn : rh.keySet())

@@ -40,10 +40,11 @@ import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 
 
+@SuppressWarnings("deprecation")
 public class COAlbum {
 	Obscura plg;
 	COUtil u;
-	COImageCraft ic;
+	ImageCraft ic;
 
 	private Map<Short,COPhoto> album = new HashMap<Short,COPhoto>();
 	private List<Short> deletedmaps = new ArrayList<Short>();
@@ -73,7 +74,7 @@ public class COAlbum {
 			this.owner = owner;
 			this.showname = false;
 		}*/
-		
+
 		public COPhoto (String owner, String name, boolean allowcopy, boolean showname){
 			this.name = name;
 			this.allowcopy = allowcopy;
@@ -94,60 +95,64 @@ public class COAlbum {
 		deletedmaps.remove(0);
 		return updateMap (id, image);
 	}
-	
+
 	public boolean isObscuraMap (short id){
 		return this.album.containsKey(id);
 	}
-	
+
 	public boolean isDeletedMap (short id){
 		return deletedmaps.contains(id);
 	}
-	
-	
-	
+
+
+
 	public boolean isOwner (short id, String name){
 		if (!album.containsKey(id)) return false;
 		return album.get(id).owner.equalsIgnoreCase(name);
 	}
-	
+
 	public boolean isOwner (short id, Player p){
 		if (!album.containsKey(id)) return false;
 		return album.get(id).owner.equalsIgnoreCase(p.getName())||
 				p.hasPermission("camera-obscura.owner.all");
 	}
-	
+
 	public void setOwner (short id, String newowner){
 		if (!album.containsKey(id)) return;
 		album.get(id).owner = newowner;
+		saveAlbum();
 	}
 
-	
+
 	public boolean isObscuraMap (ItemStack item){
 		if (item == null) return false;
 		if (item.getType()!= Material.MAP) return false;
 		return this.album.containsKey(item.getDurability());
 	}
-	
+
 	public void setPictureName (short id, String name){
 		if (album.containsKey(id)){
 			album.get(id).name = name;
 			saveAlbum();
 		}
 	}
-	 
+
 	public String getPictureName (short id){
 		if (album.containsKey(id)) return album.get(id).name;
-		else if (deletedmaps.contains(id)) return ChatColor.stripColor(u.MSG("msg_removedimage",Short.toString(id)));
+		else if (deletedmaps.contains(id)) return ChatColor.stripColor(u.getMSG("msg_removedimage",Short.toString(id)));
 		return "";
 	}
-	
 
-	
+
+
 	public void setAllowCopy (short id, boolean allowcopy){
-		if (album.containsKey(id))
+		if (album.containsKey(id)){
 			album.get(id).allowcopy = allowcopy;
+			saveAlbum();
+		}
+
 	}
-	
+
 	public boolean getAllowCopy (short id){
 		if (album.containsKey(id))
 			return album.get(id).allowcopy;
@@ -178,6 +183,9 @@ public class COAlbum {
 	 */
 	public short createNewMap(BufferedImage image){
 		MapView map = Bukkit.getServer().createMap(Bukkit.getWorlds().get(0));
+		
+
+		
 		map.setCenterX(Integer.MAX_VALUE);
 		map.setCenterZ(Integer.MAX_VALUE);
 		CORenderer mr = new CORenderer (plg, image);
@@ -211,11 +219,11 @@ public class COAlbum {
 	public short developPhoto (Player p, String target_name){
 		return developPhoto (p,p.getName(),target_name, false,plg.reusedeleted);
 	}
-	
+
 	public short developPhoto (Player p, String target_name,String background){
 		return developPhoto (p,target_name,background, false,plg.reusedeleted);
 	}
-	
+
 	public short developPhoto (Player p, String owner, String target_name,String background){
 		return developPhoto (p,owner, target_name,background, false,plg.reusedeleted);
 	}
@@ -223,7 +231,7 @@ public class COAlbum {
 	public short developPhoto (Player p, String owner, String target, boolean allowcopy, boolean reusedeleted){
 		return this.developAnyImage(ic.createPhoto(target), p, target, allowcopy,reusedeleted);
 	}
-	
+
 	public short developPhoto (Player p, String owner, String target, String background, boolean allowcopy, boolean reusedeleted){
 		return this.developAnyImage(ic.createPhoto(target,background), p, target, allowcopy,reusedeleted);
 	}
@@ -238,47 +246,49 @@ public class COAlbum {
 		return this.addImage(p.getName(),image_name,ic.getResizedImageByName(filename, fullsize), allowcopy, reusedeleted);
 	}
 
-	
+
 	public short developAnyImage (BufferedImage img, Player p, String image_name, boolean allowcopy, boolean reusedeleted){
-		if ((img!=null)&&(COCamera.isPhotoPaper(plg, p.getItemInHand()))&&(p.getItemInHand().getAmount()==1)){
-			if (!isLimitOver(p)){
-				short mapid = addImage(p.getName(), image_name, img, allowcopy, reusedeleted);
-				if (mapid>0){
-					p.getItemInHand().setType(Material.MAP);
-					p.getItemInHand().setDurability(mapid);
-					COCamera.setName(p.getItemInHand(), image_name);
-					u.PrintMSG(p, "msg_newmapcreated",mapid);
-				} else u.PrintMSG(p, "msg_cannotaddphoto"); 
-				return mapid;
-			} else u.PrintMSG(p, "msg_overlimit",'c');
-		} else u.PrintMSG(p, "msg_needphotopaper");
+		if (img!=null){
+			if (COCamera.isPhotoPaper(p.getItemInHand())&&(p.getItemInHand().getAmount()==1)){
+				if (!isLimitOver(p)){
+					short mapid = addImage(p.getName(), image_name, img, allowcopy, reusedeleted);
+					if (mapid>=0){
+						p.getItemInHand().setType(Material.MAP);
+						p.getItemInHand().setDurability(mapid);
+						COCamera.setName(p.getItemInHand(), image_name);
+						u.printMSG(p, "msg_newmapcreated",mapid);
+					} else u.printMSG(p, "msg_cannotaddphoto"); 
+					return mapid;
+				} else u.printMSG(p, "msg_overlimit",'c');
+			} else u.printMSG(p, "msg_needphotopaper");
+		} else u.printMSG(p, "msg_cannotcreatemap;");
 		return -1;
 	}
 
 	public short takePicture(BufferedImage img, Player p, String image_name, boolean allowcopy, boolean reusedeleted){
 		if (img==null) return -1;
-		if (!COCamera.isCameraInHand(plg, p)) return -1;
-		if (COCamera.inventoryContains(p, COCamera.newPhotoPaper(plg))){
-				short mapid = addImage(p.getName(),image_name, img, allowcopy, reusedeleted);
-				if (mapid>0){
-					final short mpid = mapid;
-					final String img_name = image_name;
-					final Player tp = p;
-					Bukkit.getScheduler().scheduleSyncDelayedTask(plg, new Runnable (){
-						public void run(){
-							tp.getInventory().removeItem(new ItemStack[] {COCamera.newPhotoPaper(plg)});
-							COCamera.giveImageToPlayer(plg, tp, mpid, img_name);
-							tp.getWorld().playSound(tp.getLocation(), Sound.PISTON_EXTEND,1.0f,1.0f);
-							tp.getWorld().playSound(tp.getLocation(), Sound.LEVEL_UP,1.0f,1.0f);
-							u.PrintMSG(tp, "msg_newmapcreated",mpid);
-						}
-					}, 1);
-					return mapid;
-				} else u.PrintMSG(p, "msg_cannotaddphoto");
-			} else u.PrintMSG(p, "msg_phpapernotfound");
+		if (!COCamera.isCameraInHand(p)) return -1;
+		if (COCamera.inventoryContainsPaper(p.getInventory())){
+			short mapid = addImage(p.getName(),image_name, img, allowcopy, reusedeleted);
+			if (mapid>0){
+				final short mpid = mapid;
+				final String img_name = image_name;
+				final Player tp = p;
+				Bukkit.getScheduler().scheduleSyncDelayedTask(plg, new Runnable (){
+					public void run(){
+						tp.getInventory().removeItem(new ItemStack[] {COCamera.newPhotoPaper()});
+						COCamera.giveImageToPlayer(tp, mpid, img_name);
+						tp.getWorld().playSound(tp.getLocation(), Sound.PISTON_EXTEND,1.0f,1.5f);
+						tp.getWorld().playSound(tp.getLocation(), Sound.LEVEL_UP,1.0f,1.5f);
+						u.printMSG(tp, "msg_newmapcreated",mpid);
+					}
+				}, 1);
+				return mapid;
+			} else u.printMSG(p, "msg_cannotaddphoto");
+		} else u.printMSG(p, "msg_phpapernotfound");
 		return -1;
 	}
-	
+
 	public short takePicturePortrait(Player p, String model, String background){
 		return takePicture (ic.createPortrait(model, background),p,model,false,plg.reusedeleted);
 	}
@@ -286,19 +296,19 @@ public class COAlbum {
 	public short takePicturePortrait(Player p, String model){
 		return takePicture (ic.createPortrait(model),p,model,false,plg.reusedeleted);
 	}
-	
+
 	public short takePictureTopHalf(Player p, String model, String background){
 		return takePicture (ic.createTopHalfPhoto(model, background),p,model,false,plg.reusedeleted);
 	}
-	
+
 	public short takePictureTopHalf(Player p, String model){
 		return takePicture (ic.createTopHalfPhoto(model),p,model,false,plg.reusedeleted);
 	}
-	
+
 	public short takePicturePhoto(Player p, String model, String background){
 		return takePicture (ic.createPhoto(model, background),p,model,false,plg.reusedeleted);
 	}
-	
+
 	public short takePicturePhoto(Player p, String model){
 		return takePicture (ic.createPhoto(model),p,model,false,plg.reusedeleted);
 	}
@@ -306,11 +316,11 @@ public class COAlbum {
 	public short developTopHalfPhoto (Player p){
 		return developTopHalfPhoto (p,p.getName(),p.getName());
 	}
-	
+
 	public short developTopHalfPhoto (Player p, String owner, String target_name){
 		return developTopHalfPhoto (p,owner, target_name, false,plg.reusedeleted);
 	}
-	
+
 	public short developTopHalfPhoto (Player p, String owner, String target, boolean allowcopy, boolean reusedeleted){
 		return this.developAnyImage(ic.createTopHalfPhoto(target), p, target, allowcopy,reusedeleted);
 	}
@@ -324,7 +334,7 @@ public class COAlbum {
 		return this.developAnyImage(ic.createTopHalfPhoto(target,background), p, target, allowcopy,reusedeleted);
 	}
 
-	
+
 	public short developPortrait (Player p){
 		return developPortrait (p,p.getName(),p.getName());
 	}
@@ -332,21 +342,21 @@ public class COAlbum {
 	public short developPortrait (Player p, String owner, String target_name){
 		return developPortrait (p,owner, target_name, false,plg.reusedeleted);
 	}
-	
+
 	public short developPortrait (Player p, String owner, String target_name, String background){
 		return developPortrait (p,owner, target_name,background, false,plg.reusedeleted);
 	}
-	
+
 	public short developPortrait (Player p, String owner, String target, String background, boolean allowcopy, boolean reusedeleted){
 		return this.developAnyImage(ic.createPortrait(target,background), p, target, allowcopy,reusedeleted);
 	}
-	
+
 	public short developPortrait (Player p, String owner, String target, boolean allowcopy, boolean reusedeleted){
 		return this.developAnyImage(ic.createPortrait(target), p, target, allowcopy,reusedeleted);
 	}
 
 	public short developImage (Player p, String filename, String imagename, boolean allowcopy, boolean reusedeleted){
-		return this.developAnyImage(ic.getImageByName(filename), p, imagename, allowcopy,reusedeleted);
+		return this.developAnyImage(ic.getImageByName(p,filename,true), p, imagename, allowcopy,reusedeleted);
 	}
 
 
@@ -360,12 +370,12 @@ public class COAlbum {
 		saveAlbum();
 		return id;
 	}
-	
+
 	public short updateImage (short id, String owner, String name, BufferedImage image, boolean allowcopy){
 		if (image==null) return -1;
 		updateMap (id, image);
 		album.put(id, new COPhoto (owner, name,allowcopy));
-		
+
 		saveMapSource(id, image);
 		saveAlbum();
 		return id;
@@ -383,7 +393,7 @@ public class COAlbum {
 			}
 		}
 	}
-	
+
 	public void loadMapSource (short id, String name, boolean showname){
 		if (id<0) return;
 		BufferedImage image = null;
@@ -455,57 +465,59 @@ public class COAlbum {
 			List<String> ln = new ArrayList<String>();
 			for (short id : album.keySet()){ 
 				COPhoto ph = album.get(id);
-				
+
 				if (ph.owner.equalsIgnoreCase(owner))
-					ln.add("&a"+id+" [&2"+ph.owner+"&a] : &e"+ph.name+ " &a("+u.EnDis(u.MSGnc("msg_allowcopy"), ph.allowcopy)+
-							"&a, "+u.EnDis(u.MSGnc("msg_displayname"), ph.showname)+"&a)");
+					ln.add("&a"+id+" [&2"+ph.owner+"&a] : &e"+ph.name+ " &a("+u.EnDis(u.getMSGnc("msg_allowcopy"), ph.allowcopy)+
+							"&a, "+u.EnDis(u.getMSGnc("msg_displayname"), ph.showname)+"&a)");
 			}
-			
+
 			u.printPage(p, ln, pnum, "msg_albumlist", "msg_footer", true);
-		} else u.PrintMSG(p, "msg_albumempty",'6');
-		u.PrintMSG(p, "msg_albumtotal", album.size()+";"+deletedmaps.size());
+		} else u.printMSG(p, "msg_albumempty",'6');
+		u.printMSG(p, "msg_albumtotal", album.size(),deletedmaps.size());
 	}
-	
+
 	public int getPictureCount(){
 		return album.size();
 	}
-	
+
 	public int getDeletedCount(){
 		return deletedmaps.size();
 	}
-	
+
 	public boolean isCopyAllowed(short id){
 		if (!album.containsKey(id)) return true;
 		return album.get(id).allowcopy;
 	}
-	
+
 	public boolean isNameShown(short id){
 		if (!album.containsKey(id)) return plg.default_showname;
 		return album.get(id).showname;
 	}
 
 	public void setShowName (short id, boolean showname){
-		if (album.containsKey(id))
+		if (album.containsKey(id)){
 			album.get(id).showname = showname;
+			saveAlbum();
+		}
 	}
-	
-	
+
+
 	public boolean isLimitOver(Player p){
 		if (p.hasPermission("camera-obscura.owner.limit")) return false;
 		return (plg.picsperowner<=getOwnerCount(p.getName()));
 	}
-	
+
 	public boolean isLimitOver(String pname){
 		Player tp = Bukkit.getPlayerExact(pname);
 		if ((tp!=null)&&tp.hasPermission("camera-obscura.owner.limit")) return false;
 		return (plg.picsperowner<=getOwnerCount(pname));
 	}
-	
+
 	public int getOwnerCount(String name){
 		int count = 0;
 		if (album.size()>0){
-			for (int i = 0; i<album.size();i++)
-				if (album.get(i).owner.equalsIgnoreCase(name)) count ++;
+			for (Short id : album.keySet())
+				if (album.get(id).owner.equalsIgnoreCase(name)) count ++;
 		}
 		return count;
 	}
