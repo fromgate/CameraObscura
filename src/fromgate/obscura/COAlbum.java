@@ -61,12 +61,14 @@ public class COAlbum {
 		String owner; // владелец/создател
 		boolean allowcopy; // разрешно/зпрещено копирование
 		boolean showname;
+		boolean allowrotate;
 
 		public COPhoto (String owner, String name, boolean allowcopy){
 			this.name = name;
 			this.allowcopy = allowcopy;
 			this.owner = owner;
 			this.showname = plg.default_showname;
+			this.allowrotate = false;
 		}
 		/*public COPhoto (String owner, String name){
 			this.name = name;
@@ -75,11 +77,12 @@ public class COAlbum {
 			this.showname = false;
 		}*/
 
-		public COPhoto (String owner, String name, boolean allowcopy, boolean showname){
+		public COPhoto (String owner, String name, boolean allowcopy, boolean showname,boolean allowrotate){
 			this.name = name;
 			this.allowcopy = allowcopy;
 			this.owner = owner;
 			this.showname = showname;
+			this.allowrotate = allowrotate;
 		}
 
 
@@ -421,6 +424,7 @@ public class COAlbum {
 					cfg.set(Short.toString(id)+".name", ph.name);
 					cfg.set(Short.toString(id)+".allow-copy", ph.allowcopy);
 					cfg.set(Short.toString(id)+".show-name", ph.showname);
+					cfg.set(Short.toString(id)+".allow-rotation", ph.allowrotate);
 				}
 				if (deletedmaps.size()>0)
 					cfg.set("deleted-maps", deletedmaps);
@@ -441,12 +445,13 @@ public class COAlbum {
 					if (str_id.matches("[0-9]*")) {
 						short id = Short.parseShort(str_id);
 						String name =cfg.getString(str_id+".name");
-						boolean showname =cfg.getBoolean(str_id+".show-name",true); 
+						boolean showname =cfg.getBoolean(str_id+".show-name",plg.default_showname);
+						boolean allowrotate=cfg.getBoolean(str_id+".allow-rotation",false);
 						loadMapSource(id,name, showname);
 						album.put(id, new COPhoto (cfg.getString(str_id+".owner","unknown"),
 								name,
 								cfg.getBoolean(str_id+".allow-copy",false),
-								showname));
+								showname, allowrotate));
 					} else if (str_id.equalsIgnoreCase("deleted-maps")){
 						List<String> strlist = new ArrayList<String>();
 						deletedmaps.clear();
@@ -484,6 +489,12 @@ public class COAlbum {
 		return deletedmaps.size();
 	}
 
+
+	public boolean isRotationAllowed(short id){
+	    if (!album.containsKey(id)) return true;
+	    return album.get(id).allowrotate;
+	}
+	
 	public boolean isCopyAllowed(short id){
 		if (!album.containsKey(id)) return true;
 		return album.get(id).allowcopy;

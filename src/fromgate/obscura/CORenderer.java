@@ -50,8 +50,10 @@ public class CORenderer extends MapRenderer {
 					canvas.setPixel(i, j, (byte) 0);
 			if (this.img != null) {
 				short id = map.getId();
-                if ((plg.album.isNameShown(id))) drawImage(canvas,plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
-                else drawImage(canvas,img);
+                if ((plg.album.isNameShown(id))) canvas.drawImage(0,0,plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
+                else canvas.drawImage(0,0,img);				
+                /*if ((plg.album.isNameShown(id))) drawImage(canvas,plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
+                else drawImage(canvas,img);*/
 
 			}
 		}
