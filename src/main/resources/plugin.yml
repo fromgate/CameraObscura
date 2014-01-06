@@ -1,0 +1,12 @@
+name: CameraObscura
+main: fromgate.obscura.Obscura
+version: 0.2.0/1
+author: fromgate, fromgate@gmail.com
+load: POSTWORLD
+commands:
+   photo:
+      aliases: [camera,obscura,co]
+      description: 
+      usage: 
+           /photo help
+          
