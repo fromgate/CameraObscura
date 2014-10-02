@@ -153,6 +153,8 @@ public class COCamera {
 		if ((item==null)||(item.getType()!=Material.MAP)) return;
 		short id = item.getDurability();
 		String name_album = plg().album.getPictureName(id);
+        // don't rename the item as the map may be used by another plugin
+        if (name_album.isEmpty()) return;
 		String name_item = getName (item);
 		if (!name_album.equals(name_item)) setName (item, name_album);
 	}

@@ -96,7 +96,9 @@ public class COAlbum {
 		if ((!reusedeleted)||deletedmaps.isEmpty()||(deletedmaps.size()==0)) return createNewMap (image);
 		short id = deletedmaps.get(0);
 		deletedmaps.remove(0);
-		return updateMap (id, image);
+        // don't use reserved map ids - servers can set map ids in the config
+        if (plg.reserved_maps.contains(id)) return createNewMap(image);
+        return updateMap (id, image);
 	}
 
 	public boolean isObscuraMap (short id){

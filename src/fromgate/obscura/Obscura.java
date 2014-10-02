@@ -23,6 +23,8 @@ package fromgate.obscura;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -137,6 +139,7 @@ public class Obscura extends JavaPlugin {
 	boolean stroke = true;
 	String name_color = "#000000";
 	String stroke_color = "#FFFFFF";
+    List<Short> reserved_maps = Arrays.asList((short)1963, (short)1964);;
 	int name_x = 1;
 	int name_y = 122;
 	
@@ -262,6 +265,7 @@ public class Obscura extends JavaPlugin {
 		name_color = getConfig().getString("picture-name.font-color","#000000");
 		stroke =getConfig().getBoolean("picture-name.stroke",true);
 		stroke_color = getConfig().getString("picture-name.stroke-color","#FFFFFF");
+        reserved_maps = getConfig().getShortList("reserved-maps");
 	}
 
 }
