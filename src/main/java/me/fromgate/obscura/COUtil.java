@@ -31,7 +31,7 @@ public class COUtil extends FGUtilCore {
 
     public COUtil(Obscura plugin, boolean vcheck, boolean savelng, String language, String devbukkitname, String version_name, String plgcmd, String px) {
         super(plugin, savelng, language, plgcmd, devbukkitname);
-        this.initUpdateChecker(version_name, "48542", "a2a7b26dd4dc9bc496c80de4b49e87cb42e34ae3", devbukkitname, vcheck);
+        this.initUpdateChecker(version_name, "48542", devbukkitname, vcheck);
         this.plg = plugin;
         FillMSG();
         InitCmd();
@@ -41,18 +41,18 @@ public class COUtil extends FGUtilCore {
 
     public void PrintCfg(Player p) {
         printMsg(p, "&6&l" + des.getName() + " v" + des.getVersion() + " &r&6| " + getMSG("cfg_configuration", '6'));
-        printEnDis(p, "cfg_vcheck", plg.version_check);
+        printEnDis(p, "cfg_vcheck", plg.versionCheck);
         printMSG(p, "cfg_language", plg.language);
-        printEnDis(p, "cfg_lngsave", plg.language_save);
-        /*printMSG (p, "cfg_camera",plg.camera_id,plg.camera_data);
+        printEnDis(p, "cfg_lngsave", plg.languageSave);
+		/*printMSG (p, "cfg_camera",plg.camera_id,plg.camera_data);
 		printMSG (p, "cfg_photopaper",plg.photopaper_id,plg.photopaper_data);
 		printMSG (p, "cfg_brushid",plg.brush_id);*/
-        printEnDis(p, "cfg_recipes", plg.use_recipes);
-        printEnDis(p, "cfg_lensdrop", plg.obscura_drop);
-        printMSG(p, "cfg_minpixelart", plg.minpixelart);
-        printMSG(p, "cfg_defbackground", plg.default_background);
-        printMSG(p, "cfg_totalmaps", plg.album.getPictureCount(), plg.album.getDeletedCount());
-        printMSG(p, "cfg_personalfolders", EnDis(plg.personalfolders), EnDis(plg.pf_autocreate));
+        printEnDis(p, "cfg_recipes", plg.useRecipes);
+        printEnDis(p, "cfg_lensdrop", plg.dropObscura);
+        printMSG(p, "cfg_minpixelart", plg.minPixelart);
+        printMSG(p, "cfg_defbackground", plg.defaultBackground);
+        printMSG(p, "cfg_totalmaps", Album.getPictureCount(), Album.getDeletedCount());
+        printMSG(p, "cfg_personalfolders", EnDis(plg.personalFolders), EnDis(plg.autocreatePersonalFolder));
     }
 
 

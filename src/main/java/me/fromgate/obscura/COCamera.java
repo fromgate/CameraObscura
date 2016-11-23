@@ -154,7 +154,7 @@ public class COCamera {
     public static void updateMapName(ItemStack item) {
         if ((item == null) || (item.getType() != Material.MAP)) return;
         short id = item.getDurability();
-        String name_album = plg().album.getPictureName(id);
+        String name_album = Album.getPictureName(id);
         String name_item = getName(item);
         if (!name_album.equals(name_item)) setName(item, name_album);
     }
@@ -231,7 +231,7 @@ public class COCamera {
     public static boolean inventoryContainsPicture(Inventory inv) {
         for (ItemStack stack : inv.getContents()) {
             if (stack == null) continue;
-            if (plg().album.isObscuraMap(stack)) return true;
+            if (Album.isObscuraMap(stack)) return true;
         }
         return false;
     }
@@ -276,21 +276,24 @@ public class COCamera {
     }
 
     public static boolean setupEconomy() {
-        RegisteredServiceProvider<Economy> economyProvider = plg().getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
-        if (economyProvider != null) {
-            plg().economy = economyProvider.getProvider();
+        try {
+            RegisteredServiceProvider<Economy> economyProvider = plg().getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+            if (economyProvider != null) {
+                plg().economy = economyProvider.getProvider();
+            }
+        } catch (Throwable e) {
         }
         return (plg().economy != null);
     }
 
     public static void printFileList(Player p, String... str) {
         String pdir = "";
-        if (plg().personalfolders) pdir = p.getName() + File.separator;
+        if (plg().personalFolders) pdir = p.getName() + File.separator;
         int pnum = 1;
         String mask = "";
         if (str.length > 0)
             for (int i = 0; i < str.length; i++) {
-                if (str[i].toLowerCase().startsWith("p:") && plg().personalfolders) {
+                if (str[i].toLowerCase().startsWith("p:") && plg().personalFolders) {
                     if (p.hasPermission("camera-obscura.files.all")) pdir = str[i].substring(2) + File.separator;
                 } else if (str[i].matches("[1-9]+[0-9]*")) {
                     pnum = Integer.valueOf(str[i]);
@@ -298,7 +301,7 @@ public class COCamera {
                     mask = str[i];
                 }
             }
-        File dir = new File(plg().d_images + pdir);
+        File dir = new File(plg().dirImages + pdir);
         if (dir.exists()) {
 
             List<String> ln = new ArrayList<String>();

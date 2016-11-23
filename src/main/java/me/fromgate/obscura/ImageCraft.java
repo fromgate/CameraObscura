@@ -58,20 +58,17 @@ import java.util.List;
 import java.util.Map;
 
 public class ImageCraft {
-    Obscura plg;
-    COUtil u;
-    Map<String, BufferedImage> cache = new HashMap<String, BufferedImage>();
-
-    public ImageCraft(Obscura plg) {
-        this.plg = plg;
-        this.u = plg.u;
+    private static Obscura plg() {
+        return Obscura.instance;
     }
+
+    static Map<String, BufferedImage> cache = new HashMap<String, BufferedImage>();
 
 
     /*
      *  Сюда добавить изменение размера до 128х128
      */
-    public BufferedImage getImageByURL(String strurl) {
+    public static BufferedImage getImageByURL(String strurl) {
         BufferedImage img = null;
         try {
             URL url = new URL(strurl);
@@ -81,7 +78,7 @@ public class ImageCraft {
 
         if (img == null) {
             try {
-                img = ImageIO.read(this.getClass().getResourceAsStream("default.png"));
+                img = ImageIO.read(plg().getClass().getResourceAsStream("default.png"));
             } catch (Exception e3) {
             }
         }
@@ -89,7 +86,7 @@ public class ImageCraft {
     }
 
     @Deprecated
-    public BufferedImage getResizedImageByName(String filename, boolean fullsize) {
+    public static BufferedImage getResizedImageByName(String filename, boolean fullsize) {
         BufferedImage tmp = getImageByName(filename);
         if (tmp.getWidth() != tmp.getHeight()) {
             BufferedImage ntmp = new BufferedImage(Math.max(tmp.getWidth(), tmp.getHeight()), Math.max(tmp.getWidth(), tmp.getHeight()), BufferedImage.TYPE_INT_ARGB);
@@ -107,13 +104,36 @@ public class ImageCraft {
         return img;
     }
 
-    private List<BufferedImage> resultToList(BufferedImage image) {
+    private static List<BufferedImage> resultToList(BufferedImage image) {
         List<BufferedImage> list = new ArrayList<BufferedImage>();
         if (image != null) list.add(image);
         return list;
     }
 
-    public List<BufferedImage> getImageByName(Player p, String filename, int x, int y) {
+    public static BufferedImage proportionalImageResize(BufferedImage image, int newWidth, int newHeight) {
+        double k1 = (double) newWidth / image.getWidth();  //100 / 120 = 0.83
+        double k2 = (double) newHeight / image.getHeight(); //100 / 150 = 0.66
+        Image scaledImage = image.getScaledInstance(k1 < k2 ? newWidth : -1, k1 < k2 ? -1 : newHeight, BufferedImage.SCALE_SMOOTH);
+        BufferedImage bigImage = new BufferedImage(newHeight, newWidth, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = bigImage.getGraphics();
+        if (!plg().emptySpaceColor.isEmpty()) {
+            g.setColor(java.awt.Color.decode(plg().emptySpaceColor));
+            g.fillRect(0, 0, bigImage.getWidth(), bigImage.getHeight());
+        }
+        g.drawImage(scaledImage, (bigImage.getWidth() - scaledImage.getWidth(null)) / 2, (bigImage.getHeight() - scaledImage.getHeight(null)) / 2, null);
+        return bigImage;
+    }
+
+    public static double getRecalcMultiplier(double mx, double my) {
+        double k1 = Math.max(1, plg().maxWidth) / mx;    // 10/6
+        double k2 = Math.max(1, plg().maxHeight) / my;
+        if (k1 > 1 && k2 > 1) return 1;
+        double k = k1 < 1 ? k1 : 1;
+        return k2 < k ? k2 : k;
+    }
+
+
+    public static List<BufferedImage> getImageByName(Player p, String filename, int x, int y) {
         List<BufferedImage> list = new ArrayList<BufferedImage>();
         int mx = x;
         int my = y;
@@ -122,9 +142,21 @@ public class ImageCraft {
         if (mx <= 0 || my <= 0) {
             mx = Math.max(1, image.getWidth() / 128);
             my = Math.max(1, image.getHeight() / 128);
+            double k = getRecalcMultiplier(mx, my);
+            mx = (int) (mx * k);
+            my = (int) (my * k);
         }
-        BufferedImage bigImage = new BufferedImage(128 * mx, 128 * my, BufferedImage.TYPE_INT_ARGB);
-        bigImage.getGraphics().drawImage(image.getScaledInstance(128 * mx, 128 * my, 1), 0, 0, null);
+        double k = getRecalcMultiplier(mx, my);
+        mx = (int) (mx * k);
+        my = (int) (my * k);
+
+        BufferedImage bigImage;
+        if (plg().keepAspectRation) bigImage = proportionalImageResize(image, 128 * mx, 128 * my);
+        else {
+            bigImage = new BufferedImage(128 * mx, 128 * my, BufferedImage.TYPE_INT_ARGB);
+            bigImage.getGraphics().drawImage(image.getScaledInstance(128 * mx, 128 * my, 1), 0, 0, null);
+        }
+
         if (mx == 1 && my == 1) return resultToList(bigImage);
         for (int j = 0; j < my; j++)
             for (int i = 0; i < mx; i++) {
@@ -135,23 +167,23 @@ public class ImageCraft {
         return list;
     }
 
-    public BufferedImage getImageByName(Player p, String filename, boolean useDefault) {
-        String dir = plg.d_images;
-        if (plg.personalfolders) dir = plg.d_images + p.getName() + File.separator;
+    public static BufferedImage getImageByName(Player p, String filename, boolean useDefault) {
+        String dir = plg().dirImages;
+        if (plg().personalFolders) dir = plg().dirImages + p.getName() + File.separator;
         File d = new File(dir);
         if (d.exists()) return getImageFromDirByName(dir, filename, useDefault);
         else return null; ///ЭЭЭэээээээ....
     }
 
-    public BufferedImage getImageByName(String filename) {
-        return getImageFromDirByName(plg.d_images, filename, true);
+    public static BufferedImage getImageByName(String filename) {
+        return getImageFromDirByName(plg().dirImages, filename, true);
     }
 
-    public BufferedImage getBackgroundByName(String filename) {
-        return getImageFromDirByName(plg.d_backgrounds, filename, true);
+    public static BufferedImage getBackgroundByName(String filename) {
+        return getImageFromDirByName(plg().dirBackgrounds, filename, true);
     }
 
-    public boolean isImageFileExtension(String fileName) {
+    public static boolean isImageFileExtension(String fileName) {
         if (fileName.endsWith(".png")) return true;
         if (fileName.endsWith(".jpg")) return true;
         if (fileName.endsWith(".jpeg")) return true;
@@ -160,7 +192,7 @@ public class ImageCraft {
     }
 
 
-    public File getFileWithoutExtension(String directory, String fileName) {
+    public static File getFileWithoutExtension(String directory, String fileName) {
         if (isImageFileExtension(fileName)) return new File(directory + File.separator + fileName);
         File f = new File(directory + File.separator + fileName + ".png");
         if (f.exists()) return f;
@@ -173,7 +205,7 @@ public class ImageCraft {
         return null;
     }
 
-    public BufferedImage getImageFromDirByName(String dir, String fileName, boolean useDefault) {
+    public static BufferedImage getImageFromDirByName(String dir, String fileName, boolean useDefault) {
         BufferedImage img = null;
         File f = getFileWithoutExtension(dir, fileName);
         if (f != null && f.exists())
@@ -192,17 +224,17 @@ public class ImageCraft {
             }
         if (img != null) return img;
         try {
-            if (img == null) img = ImageIO.read(this.getClass().getResourceAsStream("default.png"));
+            if (img == null) img = ImageIO.read(plg().getClass().getResourceAsStream("default.png"));
         } catch (Exception e) {
         }
         return img;
     }
 
 
-    public BufferedImage getSkinByName(String name) {
+    public static BufferedImage getSkinByName(String name) {
         BufferedImage img = null;
-        String strurl = plg.skinurl + name + ".png";
-        File f = new File(plg.d_skins + name + ".png");  //
+        String strurl = plg().skinUrl + name + ".png";
+        File f = new File(plg().dirSkins + name + ".png");  //
 
         if (f.exists()) {
             try {
@@ -219,7 +251,7 @@ public class ImageCraft {
         }
 
 
-        f = new File(plg.d_skins + plg.steve);
+        f = new File(plg().dirSkins + plg().steveSkin);
         if ((img == null) && f.exists()) {
             try {
                 img = ImageIO.read(f);
@@ -229,7 +261,7 @@ public class ImageCraft {
         if (img == null) {
             try {
 
-                img = ImageIO.read(this.getClass().getResourceAsStream("steve.png"));
+                img = ImageIO.read(plg().getClass().getResourceAsStream("steve.png"));
             } catch (Exception e) {
             }
 
@@ -238,9 +270,9 @@ public class ImageCraft {
     }
 
 
-    public void updateSkinCache(Player p) {
+    public static void updateSkinCache(Player p) {
         final String pname = p.getName();
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plg, new Runnable() {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plg(), new Runnable() {
             public void run() {
                 BufferedImage skin = getSkinByName(pname);
                 if (skin != null) cache.put(pname, skin);
@@ -250,24 +282,24 @@ public class ImageCraft {
     }
 
 
-    public BufferedImage getSkin(Player p) {
+    public static BufferedImage getSkin(Player p) {
         return getSkin(p.getName());
     }
 
 
-    public BufferedImage getSkin(String pname) {
+    public static BufferedImage getSkin(String pname) {
         BufferedImage img = null;
         if (cache.containsKey(pname)) img = cache.get(pname);
-        else img = this.getSkinByName(pname);
+        else img = getSkinByName(pname);
         return img;
     }
 
 
     /*
      *  В скине по умолчанию лицо занимает координаты 8..15 х 8..15 (или 7..14 х 7..14)
-     * 
+     *
      */
-    public BufferedImage getHeadFromSkin(BufferedImage skin) {
+    public static BufferedImage getHeadFromSkin(BufferedImage skin) {
         BufferedImage face = null;
         if (skin != null) {
             face = new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB);
@@ -278,7 +310,7 @@ public class ImageCraft {
         return face;
     }
 
-    public BufferedImage getTorsoFromSkin(BufferedImage skin) {
+    public static BufferedImage getTorsoFromSkin(BufferedImage skin) {
         BufferedImage torso = null;
         if (skin != null) {
             torso = new BufferedImage(8, 12, BufferedImage.TYPE_INT_ARGB);
@@ -289,7 +321,7 @@ public class ImageCraft {
         return torso;
     }
 
-    public BufferedImage getLeftHandFromSkin(BufferedImage skin) {
+    public static BufferedImage getLeftHandFromSkin(BufferedImage skin) {
         BufferedImage hand = null;
         if (skin != null) {
             hand = new BufferedImage(4, 12, BufferedImage.TYPE_INT_ARGB);
@@ -300,7 +332,7 @@ public class ImageCraft {
         return hand;
     }
 
-    public BufferedImage getRightHandFromSkin(BufferedImage skin) {
+    public static BufferedImage getRightHandFromSkin(BufferedImage skin) {
         BufferedImage hand = null;
         if (skin != null) {
             hand = new BufferedImage(4, 12, BufferedImage.TYPE_INT_ARGB);
@@ -311,7 +343,7 @@ public class ImageCraft {
         return hand;
     }
 
-    public BufferedImage getLegsFromSkin(BufferedImage skin) {
+    public static BufferedImage getLegsFromSkin(BufferedImage skin) {
         BufferedImage legs = null;
         if (skin != null) {
 
@@ -328,37 +360,37 @@ public class ImageCraft {
         return legs;
     }
 
-    public void saveToPng(BufferedImage img, String filename) {
+    public static void saveToPng(BufferedImage img, String filename) {
         String fn = filename;
         if (!fn.endsWith(".png")) fn = fn + ".png";
         try {
-            File imgfile = new File(plg.getDataFolder() + File.separator + "images" + File.separator + fn);
+            File imgfile = new File(plg().getDataFolder() + File.separator + "images" + File.separator + fn);
             ImageIO.write(img, "png", imgfile);
         } catch (Exception e) {
 
         }
     }
 
-    /* 
-     *  name - имя игрока, при этом фон создается функцией getBackground() 
+    /*
+     *  name - имя игрока, при этом фон создается функцией getBackground()
      */
-    public BufferedImage createPortrait(String name) {
-        return createPortrait(getHeadFromSkin(this.getSkin(name)), getBackground().getScaledInstance(128, 128, 0));
+    public static BufferedImage createPortrait(String name) {
+        return createPortrait(getHeadFromSkin(getSkin(name)), getBackground().getScaledInstance(128, 128, 0));
     }
 
-    /* 
-     *  name - имя игрока, фон берется из файла 
+    /*
+     *  name - имя игрока, фон берется из файла
      */
-    public BufferedImage createPortrait(String name, String background) {
-        return createPortrait(getHeadFromSkin(this.getSkin(name)), getBackground(background).getScaledInstance(128, 128, 0));
+    public static BufferedImage createPortrait(String name, String background) {
+        return createPortrait(getHeadFromSkin(getSkin(name)), getBackground(background).getScaledInstance(128, 128, 0));
     }
 
 
-    public BufferedImage createPortrait(String name, Image background) {
-        return createPortrait(getHeadFromSkin(this.getSkin(name)), background);
+    public static BufferedImage createPortrait(String name, Image background) {
+        return createPortrait(getHeadFromSkin(getSkin(name)), background);
     }
 
-    public BufferedImage createPortrait(BufferedImage face, Image paper) {
+    public static BufferedImage createPortrait(BufferedImage face, Image paper) {
         BufferedImage portrait = null;
         if ((face != null) && (paper != null)) {
             portrait = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
@@ -369,13 +401,13 @@ public class ImageCraft {
     }
 
 
-    public BufferedImage getPlayerTopHalfPhoto(BufferedImage skin) {
+    public static BufferedImage getPlayerTopHalfPhoto(BufferedImage skin) {
         BufferedImage thphoto = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         thphoto.getGraphics().drawImage(getPlayerPhoto(skin), 0, 2, 16, 16, 0, 0, 16, 14, null);
         return thphoto;
     }
 
-    public BufferedImage getPlayerPhoto(BufferedImage skin) {
+    public static BufferedImage getPlayerPhoto(BufferedImage skin) {
         BufferedImage photo = new BufferedImage(16, 32, BufferedImage.TYPE_INT_ARGB);
         BufferedImage face = getHeadFromSkin(skin);
         BufferedImage body = getTorsoFromSkin(skin);
@@ -390,15 +422,15 @@ public class ImageCraft {
         return photo;
     }
 
-    public BufferedImage getBackground() {
+    public static BufferedImage getBackground() {
         String bg = "default";
-        if (plg.default_background.isEmpty() || plg.default_background.equalsIgnoreCase("default")) bg = "default";
-        else if (plg.default_background.equalsIgnoreCase("random")) bg = getRandomBackgroundName();
-        else bg = plg.default_background;
+        if (plg().defaultBackground.isEmpty() || plg().defaultBackground.equalsIgnoreCase("default")) bg = "default";
+        else if (plg().defaultBackground.equalsIgnoreCase("random")) bg = getRandomBackgroundName();
+        else bg = plg().defaultBackground;
         return getBackgroundByName(bg);
     }
 
-    public BufferedImage getBackground(String background) {
+    public static BufferedImage getBackground(String background) {
         String bg = "default";
         if (background.isEmpty() || background.equalsIgnoreCase("default")) bg = "default";
         else if (background.equalsIgnoreCase("random")) bg = getRandomBackgroundName();
@@ -407,26 +439,26 @@ public class ImageCraft {
     }
 
 
-    private String getRandomBackgroundName() {
-        File dir = new File(plg.d_backgrounds);
+    private static String getRandomBackgroundName() {
+        File dir = new File(plg().dirBackgrounds);
         if (dir.list().length > 0) {
-            int filenum = plg.u.random.nextInt(dir.list().length);
+            int filenum = plg().u.random.nextInt(dir.list().length);
             return dir.list()[filenum];
         }
         return "default";
     }
 
 
-    public BufferedImage createPhoto(String name) {
+    public static BufferedImage createPhoto(String name) {
         return createPhoto(getSkin(name), getBackground(), 3);
     }
 
-    public BufferedImage createPhoto(String name, String background) {
+    public static BufferedImage createPhoto(String name, String background) {
         return createPhoto(getSkin(name), getBackground(background).getScaledInstance(128, 128, 0), 3);
     }
 
-    public BufferedImage createPhoto(BufferedImage skin, Image paper, int size) {
-        BufferedImage pph = this.getPlayerPhoto(skin);
+    public static BufferedImage createPhoto(BufferedImage skin, Image paper, int size) {
+        BufferedImage pph = getPlayerPhoto(skin);
         if ((skin == null) || (paper == null) || (pph == null)) return null;
         BufferedImage photo = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
         photo.getGraphics().drawImage(paper, 0, 0, null);
@@ -435,16 +467,16 @@ public class ImageCraft {
     }
 
 
-    public BufferedImage createTopHalfPhoto(String name) {
+    public static BufferedImage createTopHalfPhoto(String name) {
         return createTopHalfPhoto(getSkin(name), getBackground(), 5);
     }
 
-    public BufferedImage createTopHalfPhoto(String name, String background) {
+    public static BufferedImage createTopHalfPhoto(String name, String background) {
         return createTopHalfPhoto(getSkin(name), getBackground(background).getScaledInstance(128, 128, 0), 5);
     }
 
-    public BufferedImage createTopHalfPhoto(BufferedImage skin, Image paper, float size) {
-        BufferedImage pph = this.getPlayerTopHalfPhoto(skin);
+    public static BufferedImage createTopHalfPhoto(BufferedImage skin, Image paper, float size) {
+        BufferedImage pph = getPlayerTopHalfPhoto(skin);
         if ((skin == null) || (paper == null) || (pph == null)) return null;
         BufferedImage photo = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
         photo.getGraphics().drawImage(paper, 0, 0, null);
@@ -455,7 +487,7 @@ public class ImageCraft {
     /*
      * TODO нужно взять стандартные значения из Minecraft'а
      */
-    public int woolDataToRGB(byte data) {
+    public static int woolDataToRGB(byte data) {
         switch (data) {
             case 0:
                 return 0xFFe4e4e4;
@@ -496,16 +528,16 @@ public class ImageCraft {
     }
 
 
-    private boolean removeWoolAndBurn(Player p, Block b) {
+    private static boolean removeWoolAndBurn(Player p, Block b) {
         if (b.getType() != Material.WOOL) return false;
-        if ((!p.hasPermission("camera-obscura.fireproof-wool")) && plg.u.placeBlock(b, p, Material.AIR, (byte) 0, false))
+        if ((!p.hasPermission("camera-obscura.fireproof-wool")) && plg().u.placeBlock(b, p, Material.AIR, (byte) 0, false))
             return false;
         b.getWorld().playEffect(b.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
         return true;
     }
 
 
-    public BufferedImage createPixelArt2D(Player p, Location loc1, Location loc2, boolean resize, boolean burn) {
+    public static BufferedImage createPixelArt2D(Player p, Location loc1, Location loc2, boolean resize, boolean burn) {
         BufferedImage img = null;
         World w = loc1.getWorld();
         int x1 = loc1.getBlockX();
@@ -532,7 +564,7 @@ public class ImageCraft {
 
         if (((sx * sx) + (sy * sy) + (sz * sz)) != 2) return null;
 
-        if (burn) p.getWorld().playSound(p.getLocation(), Sound.FIRE, 1, 1);
+        if (burn) p.getWorld().playSound(p.getLocation(), Sound.BLOCK_FIRE_AMBIENT, 1, 1);
 
         switch (getDirection(x1, y1, z1, x2, y2, z2)) {
             case 0:
@@ -605,7 +637,7 @@ public class ImageCraft {
             img = tmp;
         }
 
-        if ((img.getWidth() < plg.minpixelart) || (img.getHeight() < plg.minpixelart)) return null;
+        if ((img.getWidth() < plg().minPixelart) || (img.getHeight() < plg().minPixelart)) return null;
         BufferedImage rst = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
         if (resize) rst.getGraphics().drawImage(img.getScaledInstance(128, 128, 1), 0, 0, null);
         else rst.getGraphics().drawImage(img, 64 - (img.getWidth() / 2), 64 - (img.getHeight() / 2), null);
@@ -613,14 +645,14 @@ public class ImageCraft {
         return rst;
     }
 
-    public int getDirection(int x1, int y1, int z1, int x2, int y2, int z2) {
+    public static int getDirection(int x1, int y1, int z1, int x2, int y2, int z2) {
         if (y1 == y2) return 0;        // 0  - y1=y2 : x1,z1 to x2,z2 (горизонтальная)
         if (z1 == z2) return 1;        // 1  - z1=z2 : x1,y1 to x2,y2
         if (x1 == x2) return 2;        // 2  - x1=x2 : y1,z1 to x2,z2
         return -1;
     }
 
-    public BufferedImage writeTextOnImage(BufferedImage img, int x, int y, String fontname, int fontsize, String color, boolean outline, String stroke_color, String text) {
+    public static BufferedImage writeTextOnImage(BufferedImage img, int x, int y, String fontname, int fontsize, String color, boolean outline, String stroke_color, String text) {
         BufferedImage image = new BufferedImage(img.getColorModel(), img.copyData(null), img.getColorModel().isAlphaPremultiplied(), null);
         Graphics g = image.getGraphics();
         Font font = new Font(fontname, Font.PLAIN, fontsize);

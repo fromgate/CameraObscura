@@ -30,21 +30,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class RenderHistory {
-    HashMap<String, Set<Short>> rh = new HashMap<String, Set<Short>>();
+    private static HashMap<String, Set<Short>> rh = new HashMap<String, Set<Short>>();
 
-    public void clearHistory(Player p) {
+    public static void clearHistory(Player p) {
         clearHistory(p.getName());
     }
 
-    public void clearHistory(String pname) {
+    public static void clearHistory(String pname) {
         if (rh.containsKey(pname)) rh.remove(pname);
     }
 
-    public void clearHistory() {
+    public static void clearHistory() {
         rh.clear();
     }
 
-    public boolean isRendered(Player p, short map_id) {
+    public static boolean isRendered(Player p, short map_id) {
         String pn = p.getName();
         if (rh.containsKey(pn)) {
             if (rh.get(pn).contains(map_id)) return true;
@@ -53,7 +53,7 @@ public class RenderHistory {
         return false;
     }
 
-    public void forceUpdate(short id) {
+    public static void forceUpdate(short id) {
         for (String pn : rh.keySet())
             if (rh.get(pn).contains(id)) rh.get(pn).remove(id);
     }
@@ -63,17 +63,12 @@ public class RenderHistory {
      * Send UnRendered map / SpigotFix
      */
     @SuppressWarnings("deprecation")
-    public void sendMap(Player p, short id) {
-        if (!isRendered(p, id)) p.sendMap(Bukkit.getMap(id));
+    public static void sendMap(Player p, short id) {
+        if (!isRendered(p, id)) {
+            p.sendMap(Bukkit.getMap(id));
+        }
+
     }
 
-/*	public void forceUpdateAndSendMap (short id){
-		for (String pn : rh.keySet())
-			if (rh.get(pn).contains(id)) {
-				rh.get(pn).remove(id);
-				Player p = Bukkit.getPlayerExact(pn);
-				if ((p!=null)&&(p.isOnline())) p.sendMap(Bukkit.getMap(id));
-			}
-	}*/
 
 }

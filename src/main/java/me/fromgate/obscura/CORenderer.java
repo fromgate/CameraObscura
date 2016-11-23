@@ -37,36 +37,29 @@ public class CORenderer extends MapRenderer {
     BufferedImage img;
 
     public CORenderer(Obscura plg, final BufferedImage img) {
-        super(true);
+        super(false);
         this.plg = plg;
         this.img = img;
     }
 
-
     @Override
     public void render(MapView map, MapCanvas canvas, Player p) {
-        if (!plg.rh.isRendered(p, map.getId())) {
-            for (int j = 0; j < 128; j++)
-                for (int i = 0; i < 128; i++)
-                    canvas.setPixel(i, j, (byte) 0);
-            if (this.img != null) {
-                short id = map.getId();
-                if ((plg.album.isNameShown(id)))
-                    canvas.drawImage(0, 0, plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke, plg.stroke_color, plg.album.getPictureName(id)));
-                else canvas.drawImage(0, 0, img);
-                /*if ((plg.album.isNameShown(id))) drawImage(canvas,plg.ic.writeTextOnImage(img, plg.name_x, plg.name_y, plg.font_name, plg.font_size, plg.name_color, plg.stroke,plg.stroke_color, plg.album.getPictureName(id)));
-                else drawImage(canvas,img);*/
-
-            }
+        if (RenderHistory.isRendered(p, map.getId())) return;
+        for (int j = 0; j < 128; j++)
+            for (int i = 0; i < 128; i++)
+                canvas.setPixel(i, j, (byte) 0);
+        if (this.img != null) {
+            short id = map.getId();
+            if ((Album.isNameShown(id)))
+                canvas.drawImage(0, 0, ImageCraft.writeTextOnImage(img, plg.nameX, plg.nameY, plg.fontName, plg.fontSize, plg.nameColor, plg.stroke, plg.strokeColor, Album.getPictureName(id)));
+            else canvas.drawImage(0, 0, img);
         }
+        p.sendMap(map);
+    }
+
+    public BufferedImage getImage() {
+        return this.img;
     }
 
 
-    public void drawImage(MapCanvas canvas, BufferedImage img) {
-        int mx = Math.min(128, img.getWidth());
-        int my = Math.min(128, img.getHeight());
-        for (int x = 0; x < mx; x++)
-            for (int y = 0; y < my; y++)
-                canvas.setPixel(x, y, Palette.matchColor(new Color(img.getRGB(x, y))));
-    }
 }

@@ -56,8 +56,6 @@ public abstract class FGUtilCore {
     //конфигурация утилит
     private String px = "";
     private String permprefix = "fgutilcore.";
-
-
     private String language = "english";
     private String plgcmd = "<command>";
     // Сообщения+перевод
@@ -80,7 +78,6 @@ public abstract class FGUtilCore {
     //newupdate-checker
     private boolean project_check_version = true;
     private String project_id = ""; //66204 - PlayEffect
-    private String project_apikey = "";
     private String project_name = "";
     private String project_current_version = "";
     private String project_last_version = "";
@@ -104,13 +101,12 @@ public abstract class FGUtilCore {
     }
 
 
-    public void initUpdateChecker(String plugin_name, String project_id, String apikey, String bukkit_dev_name, boolean enable) {
+    public void initUpdateChecker(String plugin_name, String project_id, String bukkit_dev_name, boolean enable) {
         this.project_id = project_id;
-        this.project_apikey = apikey;
         this.project_curse_url = "https://api.curseforge.com/servermods/files?projectIds=" + this.project_id;
         this.project_name = plugin_name;
         this.project_current_version = des.getVersion();
-        this.project_check_version = enable && (!this.project_id.isEmpty() && (!this.project_apikey.isEmpty()));
+        this.project_check_version = enable && (!this.project_id.isEmpty());
         this.project_bukkitdev = "http://dev.bukkit.org/bukkit-plugins/" + bukkit_dev_name + "/";
 
         if (this.project_check_version) {
@@ -118,9 +114,7 @@ public abstract class FGUtilCore {
             Bukkit.getScheduler().runTaskTimerAsynchronously(plg, new Runnable() {
                 @Override
                 public void run() {
-                    updateLastVersion();
-                    if (isUpdateRequired())
-                        logOnce(project_last_version, "Found new version of " + project_name + ". You can download version " + project_last_version + " from " + project_bukkitdev);
+                    updateMsg();
                 }
             }, (40 + getRandomInt(20)) * 1200, 60 * 1200);
         }
@@ -132,7 +126,7 @@ public abstract class FGUtilCore {
      */
     public void updateMsg(Player p) {
         if (isUpdateRequired() && p.hasPermission(this.version_info_perm)) {
-            printMSG(p, "msg_outdated", 'e', '6', "&6" + des.getName() + " v" + des.getVersion());
+            printMSG(p, "msg_outdated", 'e', '6', "&6" + project_name + " v" + des.getVersion());
             printMSG(p, "msg_pleasedownload", 'e', '6', this.project_current_version);
             printMsg(p, "&3" + this.project_bukkitdev);
         }
@@ -146,7 +140,7 @@ public abstract class FGUtilCore {
             public void run() {
                 updateLastVersion();
                 if (isUpdateRequired()) {
-                    log.info("[" + des.getName() + "] " + des.getName() + " v" + des.getVersion() + " is outdated! Recommended version is v" + project_last_version);
+                    log.info("[" + des.getName() + "] " + project_name + " v" + des.getVersion() + " is outdated! Recommended version is v" + project_last_version);
                     log.info("[" + des.getName() + "] " + project_bukkitdev);
                 }
             }
@@ -165,7 +159,7 @@ public abstract class FGUtilCore {
 
         try {
             URLConnection conn = url.openConnection();
-            conn.addRequestProperty("X-API-Key", this.project_apikey);
+            conn.addRequestProperty("X-API-Key", null);
             conn.addRequestProperty("User-Agent", this.project_name + " using FGUtilCore (by fromgate)");
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String response = reader.readLine();
@@ -174,10 +168,8 @@ public abstract class FGUtilCore {
                 JSONObject latest = (JSONObject) array.get(array.size() - 1);
                 String plugin_name = (String) latest.get("name");
                 this.project_last_version = plugin_name.replace(this.project_name + " v", "").trim();
-                //String plugin_jar_url = (String) latest.get("downloadUrl");
-                //this.project_file_url = plugin_jar_url.replace("http://servermods.cursecdn.com/", "http://dev.bukkit.org/media/");
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             this.log("Failed to check last version");
         }
     }
@@ -186,7 +178,6 @@ public abstract class FGUtilCore {
     private boolean isUpdateRequired() {
         if (!project_check_version) return false;
         if (project_id.isEmpty()) return false;
-        if (project_apikey.isEmpty()) return false;
         if (project_last_version.isEmpty()) return false;
         if (project_current_version.isEmpty()) return false;
         if (project_current_version.equalsIgnoreCase(project_last_version)) return false;
@@ -196,7 +187,7 @@ public abstract class FGUtilCore {
     }
 
 
-    /* 
+    /*
      * Инициализация стандартных сообщений
      */
     private void initStdMsg() {
@@ -262,9 +253,9 @@ public abstract class FGUtilCore {
         else cmdlist = cmdlist + ", " + cmd;
     }
 
-    /* 
-     * Проверка пермишенов и наличия команды
-     */
+	/*
+	 * Проверка пермишенов и наличия команды
+	 */
 
     public boolean checkCmdPerm(CommandSender sender, String cmd) {
         if (!cmds.containsKey(cmd.toLowerCase())) return false;
@@ -374,10 +365,10 @@ public abstract class FGUtilCore {
     }
 
 
-    /*
-     * Разные полезные процедурки 
-     * 
-     */
+	/*
+	 * Разные полезные процедурки
+	 *
+	 */
 
     /* Функция проверяет входит ли число (int)
      * в список чисел представленных в виде строки вида n1,n2,n3,...nN
@@ -392,7 +383,7 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    /* 
+    /*
      * Функция проверяет входят ли все числа массива (int)
      * в список чисел представленных в виде строки вида n1,n2,n3,...nN
      */
@@ -403,7 +394,7 @@ public abstract class FGUtilCore {
     }
 
 
-    /* 
+    /*
      * Функция проверяет входит ли слово (String) в список слов
      * представленных в виде строки вида n1,n2,n3,...nN
      */
@@ -415,12 +406,11 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    /* 
+    /*
      * Функция проверяет входит есть ли item (блок) с заданным id и data в списке,
      * представленным в виде строки вида id1:data1,id2:data2,MATERIAL_NAME:data
      * При этом если data может быть опущена
      */
-    @Deprecated
     public boolean isItemInList(int id, int data, String str) {
         String[] ln = str.split(",");
         if (ln.length > 0)
@@ -431,7 +421,7 @@ public abstract class FGUtilCore {
 
 
 
-    /*public boolean compareItemStr (ItemStack item, String itemstr){
+	/*public boolean compareItemStr (ItemStack item, String itemstr){
         return compareItemStr (item.getTypeId(), item.getDurability(), item.getAmount(), itemstr);
     }*/
 
@@ -442,7 +432,6 @@ public abstract class FGUtilCore {
 
     // Надо использовать маску: id:data*amount, id:data, id*amount
 
-    @Deprecated
     public boolean compareItemStr(ItemStack item, String str) {
         String itemstr = str;
         String name = "";
@@ -459,12 +448,7 @@ public abstract class FGUtilCore {
         return compareItemStrIgnoreName(item.getTypeId(), item.getDurability(), item.getAmount(), itemstr); // ;compareItemStr(item, itemstr);
     }
 
-    @Deprecated
-    public boolean compareItemStrIgnoreName(ItemStack itemStack, String itemstr) {
-        return compareItemStrIgnoreName(itemStack.getTypeId(), itemStack.getDurability(), itemStack.getAmount(), itemstr);
-    }
 
-    @Deprecated
     public boolean compareItemStrIgnoreName(int item_id, int item_data, int item_amount, String itemstr) {
         if (!itemstr.isEmpty()) {
             int id = -1;
@@ -485,7 +469,7 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    @Deprecated
+
     public boolean hasItemInInventory(Player p, String itemstr) {
         ItemStack item = parseItemStack(itemstr);
         if (item == null) return false;
@@ -493,12 +477,11 @@ public abstract class FGUtilCore {
         return (countItemInInventory(p, itemstr) >= item.getAmount());
     }
 
-    @Deprecated
+
     public int countItemInInventory(Player p, String itemstr) {
         return countItemInInventory(p.getInventory(), itemstr);
     }
 
-    @Deprecated
     public void removeItemInInventory(final Player p, final String itemstr) {
         Bukkit.getScheduler().runTaskLater(plg, new Runnable() {
             @Override
@@ -509,13 +492,11 @@ public abstract class FGUtilCore {
     }
 
 
-    @Deprecated
     private boolean itemHasName(ItemStack item) {
         if (!item.hasItemMeta()) return false;
         return item.getItemMeta().hasDisplayName();
     }
 
-    @Deprecated
     private boolean compareItemName(ItemStack item, String istrname) {
         if (istrname.isEmpty() && (!itemHasName(item))) return true;
         if ((!istrname.isEmpty()) && itemHasName(item)) {
@@ -525,7 +506,6 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    @Deprecated
     public int removeItemInInventory(Inventory inv, String istr) {
         String itemstr = istr;
         int left = 1;
@@ -570,7 +550,7 @@ public abstract class FGUtilCore {
         return left;
     }
 
-    @Deprecated
+
     public int countItemInInventory(Inventory inv, String istr) {
         String itemstr = istr;
         int count = 0;
@@ -608,7 +588,7 @@ public abstract class FGUtilCore {
         return count;
     }
 
-    @Deprecated
+
     public boolean removeItemInHand(Player p, String itemstr) {
         if (!itemstr.isEmpty()) {
             int id = -1;
@@ -629,7 +609,7 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    @Deprecated
+
     public boolean removeItemInHand(Player p, int item_id, int item_data, int item_amount) {
         if ((p.getItemInHand() != null) &&
                 (p.getItemInHand().getTypeId() == item_id) &&
@@ -645,14 +625,13 @@ public abstract class FGUtilCore {
         return false;
     }
 
-    @Deprecated
     public void giveItemOrDrop(Player p, ItemStack item) {
         for (ItemStack i : p.getInventory().addItem(item).values())
             p.getWorld().dropItemNaturally(p.getLocation(), i);
     }
 
     /*
-     * Вывод сообщения пользователю 
+     * Вывод сообщения пользователю
      */
     public void printMsg(CommandSender p, String msg) {
         String message = ChatColor.translateAlternateColorCodes('&', msg);
@@ -669,7 +648,7 @@ public abstract class FGUtilCore {
 
 
     /*
-     * Бродкаст сообщения, использую при отладке 
+     * Бродкаст сообщения, использую при отладке
      */
     public void BC(String msg) {
         plg.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', px + msg));
@@ -686,15 +665,7 @@ public abstract class FGUtilCore {
     }
 
     /*
-     * 	public void printMSG (CommandSender p, Object... s){
-		String message = getMSG (s); 
-		if ((!(p instanceof Player))&&(!colorconsole)) message = ChatColor.stripColor(message);
-		p.sendMessage(message);
-	}
-     */
-
-    /*
-     * Запись сообщения в лог 
+     * Запись сообщения в лог
      */
     public void log(String msg) {
         log.info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', px + msg)));
@@ -708,7 +679,7 @@ public abstract class FGUtilCore {
 
 
     /*
-     * Отправка цветного сообщения в консоль 
+     * Отправка цветного сообщения в консоль
      */
     public void SC(String msg) {
         plg.getServer().getConsoleSender().sendMessage(ChatColor.translateAlternateColorCodes('&', px + msg));
@@ -716,10 +687,10 @@ public abstract class FGUtilCore {
 
 
 
-    /*
-     * Перевод
-     * 
-     */
+	/*
+	 * Перевод
+	 *
+	 */
 
     /*
      *  Инициализация файла с сообщениями
@@ -760,7 +731,7 @@ public abstract class FGUtilCore {
 
 
     /*
-     * Сохранение сообщений в файл 
+     * Сохранение сообщений в файл
      */
     public void SaveMSG() {
         String[] keys = this.msglist.split(",");
@@ -821,7 +792,6 @@ public abstract class FGUtilCore {
         p.sendMessage(message);
     }
 
-
     /*
      * Печать справки
      */
@@ -834,7 +804,7 @@ public abstract class FGUtilCore {
     }
 
 
-    /* 
+    /*
      * Печать справки по команде
      */
     public void printHLP(Player p, String cmd) {
@@ -860,7 +830,7 @@ public abstract class FGUtilCore {
         printPage(p, hlp, page, title, "", false, lpp);
     }
 
-    /* 
+    /*
      * Возврат логической переменной в виде текста выкл./вкл.
      */
     public String EnDis(boolean b) {
@@ -872,20 +842,20 @@ public abstract class FGUtilCore {
         return b ? ChatColor.DARK_GREEN + str2 : ChatColor.RED + str2;
     }
 
-    /* 
-     * Печать значения логической переменной 
+    /*
+     * Печать значения логической переменной
      */
     public void printEnDis(CommandSender p, String msg_id, boolean b) {
         p.sendMessage(getMSG(msg_id) + ": " + EnDis(b));
     }
 
 
-    /* 
-     * Дополнительные процедуры
-     */
+	/*
+	 * Дополнительные процедуры
+	 */
 
     /*
-     * Переопределение префикса пермишенов 
+     * Переопределение префикса пермишенов
      */
     public void setPermPrefix(String ppfx) {
         this.permprefix = ppfx + ".";
@@ -894,7 +864,7 @@ public abstract class FGUtilCore {
 
     /*
      * Проверка соответствия пермишена (указывать без префикса)
-     * заданной команде 
+     * заданной команде
      */
     public boolean equalCmdPerm(String cmd, String perm) {
         return (cmds.containsKey(cmd.toLowerCase())) &&
@@ -903,12 +873,11 @@ public abstract class FGUtilCore {
 
 
 
-    /* 
-     * Преобразует строку вида <id>:<data>[*<amount>] в ItemStack
-     * Возвращает null если строка кривая
-     */
+	/*
+	 * Преобразует строку вида <id>:<data>[*<amount>] в ItemStack
+	 * Возвращает null если строка кривая
+	 */
 
-    @Deprecated
     public ItemStack parseItemStack(String itemstr) {
         if (itemstr.isEmpty()) return null;
 
@@ -1000,19 +969,19 @@ public abstract class FGUtilCore {
         return null;
     }
 
-    /*public ItemStack parseItemStack (String itemstr){
+	/*public ItemStack parseItemStack (String itemstr){
         if (!itemstr.isEmpty()){
             //int id = -1;
             Material m = Material.AIR;
             int amount =1;
-            short data =0;			
+            short data =0;
             String [] si = itemstr.split("\\*");
             if (si.length>0){
                 if ((si.length==2)&&si[1].matches("[1-9]+[0-9]*")) amount = Integer.parseInt(si[1]);
                 String ti[] = si[0].split(":");
                 if (ti.length>0){
                     if (ti[0].matches("[0-9]*")) m = Material.getMaterial(Integer.parseInt(ti[0]));//id=Integer.parseInt(ti[0]);
-                    else m=Material.getMaterial(ti[0].toUpperCase());						
+                    else m=Material.getMaterial(ti[0].toUpperCase());
                     if ((ti.length==2)&&(ti[1]).matches("[0-9]*")) data = Short.parseShort(ti[1]);
                     return new ItemStack (m,amount,data);
                 }
@@ -1074,7 +1043,7 @@ public abstract class FGUtilCore {
 
 
     /*
-     * Проверка формата строкового представления целых чисел 
+     * Проверка формата строкового представления целых чисел
      */
     public boolean isIntegerSigned(String str) {
         return (str.matches("-?[0-9]+[0-9]*"));
@@ -1201,11 +1170,9 @@ public abstract class FGUtilCore {
     }
 
     public boolean returnMSG(boolean result, CommandSender p, Object... s) {
-        printMSG(p, s);
+        if (p != null) this.printMSG(p, s);
         return result;
     }
 
 
 }
-
-

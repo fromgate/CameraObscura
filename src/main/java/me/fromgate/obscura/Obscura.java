@@ -55,18 +55,23 @@ import java.io.IOException;
  * - Добавлена возможность "нарезки" больших файлов
  * - Новый пермишен: camera-obscura.image.large - дает возможность создавать "большие картины"
  * - При подгрузке большого файла на одну карту - он меняет размер
- * - Изменен подход к "уникальным" предметам. Теперь они определяются на имя, а не по нестандартному значению data 
- * 
+ * - Изменен подход к "уникальным" предметам. Теперь они определяются на имя, а не по нестандартному значению data
+ *
+ * 0.2.1
+ * - Немного улучшил работу с командами
+ * - Опция на сокрытие названия в рамке
+ * - Проппорциональное изменения размера
+ *
  * TODO
- * - Авто переделка удаленных карт в фотобумагу? Автодроп из рамок удаленных картин?  
+ * - Авто переделка удаленных карт в фотобумагу? Автодроп из рамок удаленных картин?
  * - Возможность перерисовывать/перефотографировать все карты при наличии пермишена
  * - HD-скины
  * - Отключить стаканье фотобумаги
  * - персональные директори для картинок
- * 	
+ *
  */
 
-/* 
+/*
  * Permissions:
  * camera-obscura.owner.all - owner of all pictures (maps)
  * camera-obscura.config
@@ -88,77 +93,69 @@ import java.io.IOException;
  * camera-obscura.files - /photo files
  * camera-obscura.files.autocreate
  * camera-obscura.files.all
- * 
+ *
  */
 
 public class Obscura extends JavaPlugin {
     //Конфигурация
-    boolean version_check = true;
+    boolean versionCheck = true;
     String language = "english";
-    boolean language_save = false;
+    boolean languageSave = false;
 
-    private String dir_album = "album";
-    private String dir_images = "images";
-    private String dir_backgrounds = "backgrounds";
-    private String dir_skins = "skins";
+    private String folderAlbum = "album";
+    private String folderImages = "images";
+    private String folderBackgrounds = "backgrounds";
+    private String folderSkins = "skins";
 
-
-    /////////////////////////////////////////////////
-
-    public static Obscura instance;
 
     String brush = "FEATHER";
     String photopaper = "Photo_paper&1&2&3$339";
     String camera = "Photo_camera&1&2&3$347";
-    int max_width = 7; //896
-    int max_height = 5; //640
+    int maxWidth = 7; //896
+    int maxHeight = 5; //640
+    boolean keepAspectRation = true;
+    String emptySpaceColor = "#000000";
+    boolean reuseDeleted = true;
+    boolean useRecipes = true;
+    boolean dropObscura = true; //будет ли камера на штативе выбрасывать фотоаппарат при разрушении?
+    boolean blockSbuttonPlace = true;
+    int minPixelart = 16;
+    String defaultBackground = "default"; // "random" - для случайного, реализовать
+    int picsPerOwner = 15;
+    boolean burnPaintedWool = false;
+    boolean personalFolders = false;
+    boolean autocreatePersonalFolder = false;
 
+    float focus1 = 2.0f;
+    float focus2 = 3.8f;
 
-    boolean reusedeleted = true;
-    boolean use_recipes = true;
-    boolean obscura_drop = true; //будет ли камера на штативе выбрасывать фотоаппарат при разрушении?
-    boolean block_sbutton_place = true;
-    int minpixelart = 16;
-    String default_background = "default"; // "random" - для случайного, реализовать
-    int picsperowner = 15;
-    boolean burnpaintedwool = false;
-    boolean personalfolders = false;
-    boolean pf_autocreate = false;
-
-    float focus_1 = 2.0f;
-    float focus_2 = 3.8f;
-
-    String steve = "steve.png";
-    String skinurl = "http://s3.amazonaws.com/MinecraftSkins/";
+    String steveSkin = "steve.png";
+    String skinUrl = "http://s3.amazonaws.com/MinecraftSkins/";
 
     //Настройка отображения заголовка
-    boolean default_showname = true;
-    String font_name = "Serif";
-    int font_size = 9;
+    boolean defaultShowName = true;
+    boolean hideNameInFrames = true;
+    String fontName = "Serif";
+    int fontSize = 9;
     boolean stroke = true;
-    String name_color = "#000000";
-    String stroke_color = "#FFFFFF";
-    int name_x = 1;
-    int name_y = 122;
-
-    boolean useOldPalette = false;
+    String nameColor = "#000000";
+    String strokeColor = "#FFFFFF";
+    int nameX = 1;
+    int nameY = 122;
 
 
-    protected Economy economy = null;
-    boolean vault_eco = false;
+    String dirImages;
+    String dirAlbum;
+    String dirSkins;
+    String dirBackgrounds;
 
-    String d_images;
-    String d_album;
-    String d_skins;
-    String d_backgrounds;
-
+    public static Obscura instance;
 
     COUtil u;
-    ImageCraft ic;
-    COAlbum album;
     COCmd cmd;
     COListener l;
-    RenderHistory rh;
+    protected Economy economy = null;
+    boolean vault_eco = false;
 
 
     @Override
@@ -166,37 +163,30 @@ public class Obscura extends JavaPlugin {
         loadCfg();
         saveCfg();
         instance = this;
-        d_images = getDataFolder() + File.separator + dir_images + File.separator;
-        d_album = getDataFolder() + File.separator + dir_album + File.separator;
-        d_skins = getDataFolder() + File.separator + dir_skins + File.separator;
-        d_backgrounds = getDataFolder() + File.separator + dir_backgrounds + File.separator;
+        dirImages = getDataFolder() + File.separator + folderImages + File.separator;
+        dirAlbum = getDataFolder() + File.separator + folderAlbum + File.separator;
+        dirSkins = getDataFolder() + File.separator + folderSkins + File.separator;
+        dirBackgrounds = getDataFolder() + File.separator + folderBackgrounds + File.separator;
         WoolSelect.init(this);
         ItemUtil.init(this);
-        Palette.init(useOldPalette);
-
-        File dir = new File(d_images);
+        File dir = new File(dirImages);
         if (!dir.exists()) dir.mkdirs();
-        dir = new File(d_album);
+        dir = new File(dirAlbum);
         if (!dir.exists()) dir.mkdirs();
-        dir = new File(d_backgrounds);
+        dir = new File(dirBackgrounds);
         if (!dir.exists()) dir.mkdirs();
-        dir = new File(d_skins);
+        dir = new File(dirSkins);
         if (!dir.exists()) dir.mkdirs();
-
-
-        u = new COUtil(this, version_check, language_save, language, "camera-obscura", "CameraObscura", "photo", "&3[CO]&f ");
-        rh = new RenderHistory();
-        ic = new ImageCraft(this);
-        album = new COAlbum(this);
+        u = new COUtil(this, versionCheck, languageSave, language, "camera-obscura", "CameraObscura", "photo", "&3[CO]&f ");
+        Album.init();
         l = new COListener(this);
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(l, this);
         cmd = new COCmd(this);
         getCommand("photo").setExecutor(cmd);
-        if (use_recipes) COCamera.initRecipes();
+        if (useRecipes) COCamera.initRecipes();
         vault_eco = COCamera.setupEconomy();
-        if (!vault_eco) u.log("Connection to Vault failed!");
-
+        if (!vault_eco) u.log("Failed to init Vault/Economy services. Economic features will be disabled");
         try {
             MetricsLite metrics = new MetricsLite(this);
             metrics.start();
@@ -206,60 +196,64 @@ public class Obscura extends JavaPlugin {
 
 
     public void saveCfg() {
-        getConfig().set("general.check-updates", version_check);
+        getConfig().set("general.check-updates", versionCheck);
         getConfig().set("general.language", language);
-        getConfig().set("general.language-save", language_save);
-        getConfig().set("items.use-recipes", use_recipes);
-        getConfig().set("items.obscura-drop", obscura_drop);
-        getConfig().set("pictures.reuse-deleted-maps", reusedeleted);
-        getConfig().set("pictures.minimal-pixel-art-size", minpixelart);
-        getConfig().set("pictures.default-background", default_background);
-        getConfig().set("pictures.pictures-per-owner", picsperowner);
-        getConfig().set("pictures.burn-pixel-art-wool", burnpaintedwool);
-        getConfig().set("pictures.default-skin", steve);
-        getConfig().set("pictures.skin-url", skinurl);
-        getConfig().set("pictures.personal-folders.enable", personalfolders);
-        getConfig().set("pictures.personal-folders.auto-create", pf_autocreate);
-        getConfig().set("pictures.muti-map.max-width", max_width);
-        getConfig().set("pictures.muti-map.max-height", max_height);
-        getConfig().set("pictures.use-old-pallete", useOldPalette);
-        getConfig().set("picture-name.show-at-new-pictures", default_showname);
-        getConfig().set("picture-name.x", name_x);
-        getConfig().set("picture-name.y", name_y);
-        getConfig().set("picture-name.font-name", font_name);
-        getConfig().set("picture-name.font-size", font_size);
-        getConfig().set("picture-name.font-color", name_color);
+        getConfig().set("general.language-save", languageSave);
+        getConfig().set("items.use-recipes", useRecipes);
+        getConfig().set("items.obscura-drop", dropObscura);
+        getConfig().set("pictures.reuse-deleted-maps", reuseDeleted);
+        getConfig().set("pictures.minimal-pixel-art-size", minPixelart);
+        getConfig().set("pictures.default-background", defaultBackground);
+        getConfig().set("pictures.pictures-per-owner", picsPerOwner);
+        getConfig().set("pictures.burn-pixel-art-wool", burnPaintedWool);
+        getConfig().set("pictures.default-skin", steveSkin);
+        getConfig().set("pictures.skin-url", skinUrl);
+        getConfig().set("pictures.personal-folders.enable", personalFolders);
+        getConfig().set("pictures.personal-folders.auto-create", autocreatePersonalFolder);
+        getConfig().set("pictures.muti-map.max-width", maxWidth);
+        getConfig().set("pictures.muti-map.max-height", maxHeight);
+        getConfig().set("pictures.muti-map.keep-aspect-ratio", keepAspectRation);
+        getConfig().set("pictures.muti-map.empty-space-color", emptySpaceColor);
+        getConfig().set("pictures.hide-image-hint-in-frame", hideNameInFrames);
+        getConfig().set("picture-name.show-at-new-pictures", defaultShowName);
+        getConfig().set("picture-name.x", nameX);
+        getConfig().set("picture-name.y", nameY);
+        getConfig().set("picture-name.font-name", fontName);
+        getConfig().set("picture-name.font-size", fontSize);
+        getConfig().set("picture-name.font-color", nameColor);
         getConfig().set("picture-name.stroke", stroke);
-        getConfig().set("picture-name.stroke-color", stroke_color);
+        getConfig().set("picture-name.stroke-color", strokeColor);
         saveConfig();
     }
 
     public void loadCfg() {
-        version_check = getConfig().getBoolean("general.check-updates", true);
+        versionCheck = getConfig().getBoolean("general.check-updates", true);
         language = getConfig().getString("general.language", "english");
-        language_save = getConfig().getBoolean("general.language-save", false);
-        max_width = getConfig().getInt("pictures.muti-map.max-width", max_width);
-        max_height = getConfig().getInt("pictures.muti-map.max-height", max_height);
-        useOldPalette = getConfig().getBoolean("pictures.use-old-pallete", useOldPalette);
-        use_recipes = getConfig().getBoolean("items.use-recipes", true);
-        obscura_drop = getConfig().getBoolean("items.obscura-drop", true);
-        reusedeleted = getConfig().getBoolean("pictures.reuse-deleted-maps", true);
-        minpixelart = getConfig().getInt("pictures.minimal-pixel-art-size", 16);
-        default_background = getConfig().getString("pictures.default-background", "default");
-        picsperowner = getConfig().getInt("pictures.pictures-per-owner", 15);
-        burnpaintedwool = getConfig().getBoolean("pictures.burn-pixel-art-wool", true);
-        steve = getConfig().getString("pictures.default-skin", "default_skin.png");
-        skinurl = getConfig().getString("pictures.skin-url", "http://s3.amazonaws.com/MinecraftSkins/");
-        default_showname = getConfig().getBoolean("picture-name.show-at-new-pictures", false);
-        personalfolders = getConfig().getBoolean("pictures.personal-folders.enable", false);
-        pf_autocreate = getConfig().getBoolean("pictures.personal-folders.auto-create", false);
-        name_x = getConfig().getInt("picture-name.x", 1);
-        name_y = getConfig().getInt("picture-name.y", 122);
-        font_name = getConfig().getString("picture-name.font-name", "Serif");
-        font_size = getConfig().getInt("picture-name.font-size", 9);
-        name_color = getConfig().getString("picture-name.font-color", "#000000");
+        languageSave = getConfig().getBoolean("general.language-save", false);
+        maxWidth = getConfig().getInt("pictures.muti-map.max-width", maxWidth);
+        maxHeight = getConfig().getInt("pictures.muti-map.max-height", maxHeight);
+        keepAspectRation = getConfig().getBoolean("pictures.muti-map.keep-aspect-ratio", false);
+        emptySpaceColor = getConfig().getString("pictures.muti-map.empty-space-color", "#000000");
+        useRecipes = getConfig().getBoolean("items.use-recipes", true);
+        hideNameInFrames = getConfig().getBoolean("pictures.hide-image-hint-in-frame", true);
+        dropObscura = getConfig().getBoolean("items.obscura-drop", true);
+        reuseDeleted = getConfig().getBoolean("pictures.reuse-deleted-maps", true);
+        minPixelart = getConfig().getInt("pictures.minimal-pixel-art-size", 16);
+        defaultBackground = getConfig().getString("pictures.default-background", "default");
+        picsPerOwner = getConfig().getInt("pictures.pictures-per-owner", 15);
+        burnPaintedWool = getConfig().getBoolean("pictures.burn-pixel-art-wool", true);
+        steveSkin = getConfig().getString("pictures.default-skin", "default_skin.png");
+        skinUrl = getConfig().getString("pictures.skin-url", "http://s3.amazonaws.com/MinecraftSkins/");
+        defaultShowName = getConfig().getBoolean("picture-name.show-at-new-pictures", false);
+        personalFolders = getConfig().getBoolean("pictures.personal-folders.enable", false);
+        autocreatePersonalFolder = getConfig().getBoolean("pictures.personal-folders.auto-create", false);
+        nameX = getConfig().getInt("picture-name.x", 1);
+        nameY = getConfig().getInt("picture-name.y", 122);
+        fontName = getConfig().getString("picture-name.font-name", "Serif");
+        fontSize = getConfig().getInt("picture-name.font-size", 9);
+        nameColor = getConfig().getString("picture-name.font-color", "#000000");
         stroke = getConfig().getBoolean("picture-name.stroke", true);
-        stroke_color = getConfig().getString("picture-name.stroke-color", "#FFFFFF");
+        strokeColor = getConfig().getString("picture-name.stroke-color", "#FFFFFF");
     }
 
 }
