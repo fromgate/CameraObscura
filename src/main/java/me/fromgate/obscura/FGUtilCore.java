@@ -761,10 +761,10 @@ public abstract class FGUtilCore {
                 int px = 1;
                 if ((s.length > 1) && (s[1] instanceof Character)) {
                     px = 2;
-                    color1 = "&" + (Character) s[1];
+                    color1 = "&" + s[1];
                     if ((s.length > 2) && (s[2] instanceof Character)) {
                         px = 3;
-                        color2 = "&" + (Character) s[2];
+                        color2 = "&" + s[2];
                     }
                 }
                 str = color1 + msg.get(id);

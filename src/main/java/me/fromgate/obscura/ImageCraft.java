@@ -187,8 +187,7 @@ public class ImageCraft {
         if (fileName.endsWith(".png")) return true;
         if (fileName.endsWith(".jpg")) return true;
         if (fileName.endsWith(".jpeg")) return true;
-        if (fileName.endsWith(".gif")) return true;
-        return false;
+        return fileName.endsWith(".gif");
     }
 
 

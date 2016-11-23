@@ -113,10 +113,9 @@ public class WoolSelect {
         Location loc2 = getP2(p);
         if ((loc1 == null) || (loc2 == null)) return false;
         if (!loc1.getWorld().equals(loc2.getWorld())) return false;
-        if ((loc1.getBlockX() == loc2.getBlockX()) &&
+        return !((loc1.getBlockX() == loc2.getBlockX()) &&
                 (loc1.getBlockY() == loc2.getBlockY()) &&
-                (loc1.getBlockZ() == loc2.getBlockZ())) return false;
-        return true;
+                (loc1.getBlockZ() == loc2.getBlockZ()));
     }
 
 }

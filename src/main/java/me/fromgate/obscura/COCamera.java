@@ -83,8 +83,7 @@ public class COCamera {
         if (b.getRelative(BlockFace.NORTH).getType() == Material.STONE_BUTTON) return true;
         if (b.getRelative(BlockFace.SOUTH).getType() == Material.STONE_BUTTON) return true;
         if (b.getRelative(BlockFace.EAST).getType() == Material.STONE_BUTTON) return true;
-        if (b.getRelative(BlockFace.WEST).getType() == Material.STONE_BUTTON) return true;
-        return false;
+        return b.getRelative(BlockFace.WEST).getType() == Material.STONE_BUTTON;
     }
 
     public static Block getLensFromTripodCamera(Block block) {
@@ -109,9 +108,9 @@ public class COCamera {
     }
 
 
-    public static boolean isCameraInHand(Player p) {
-        if (p.getItemInHand() == null) return false;
-        return isCamera(p.getItemInHand());
+    public static boolean isCameraInHand(Player player) {
+        if (player.getInventory().getItemInMainHand() == null) return false;
+        return isCamera(player.getInventory().getItemInMainHand());
     }
 
     public static boolean isCamera(ItemStack item) {

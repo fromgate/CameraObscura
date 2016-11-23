@@ -72,104 +72,106 @@ public class COCmd implements CommandExecutor {
         return false;
     }
 
-    public boolean ExecuteCmd(Player p, String cmd) {
+    public boolean ExecuteCmd(Player player, String cmd) {
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
         if (cmd.equalsIgnoreCase("help")) {
-            u.PrintHlpList(p, 1, 10);
+            u.PrintHlpList(player, 1, 10);
         } else if (cmd.equalsIgnoreCase("id")) {
-            if ((p.getItemInHand() != null) && (p.getItemInHand().getType() == Material.MAP)) {
-                short id = p.getItemInHand().getDurability();
+            if ((itemInHand != null) && (itemInHand.getType() == Material.MAP)) {
+                short id = itemInHand.getDurability();
                 String maptype = u.getMSGnc("map_regular");
                 if (Album.isObscuraMap(id)) maptype = u.getMSGnc("map_obscura");
                 if (Album.isDeletedMap(id)) maptype = u.getMSGnc("map_deleted");
-                u.printMSG(p, "msg_mapidtype", id, maptype);
-            } else u.printMSG(p, "msg_needmapinhand");
+                u.printMSG(player, "msg_mapidtype", id, maptype);
+            } else u.printMSG(player, "msg_needmapinhand");
         } else if (cmd.equalsIgnoreCase("cfg")) {
-            u.PrintCfg(p);
+            u.PrintCfg(player);
         } else if (cmd.equalsIgnoreCase("rotate")) {
-            return removeImage(p, "");
+            return removeImage(player, "");
         } else if (cmd.equalsIgnoreCase("rotate")) {
-            return setRotionAllowed(p, "");
+            return setRotionAllowed(player, "");
         } else if (cmd.equalsIgnoreCase("allowcopy")) {
-            return setAllowCopy(p, "");
+            return setAllowCopy(player, "");
         } else if (cmd.equalsIgnoreCase("showname")) {
-            return setShowName(p, "");
+            return setShowName(player, "");
         } else if (cmd.equalsIgnoreCase("camera")) {
             ItemStack camera = COCamera.newCamera();//COCamera.setName(new ItemStack (plg.camera_id, plg.camera_data), "Photo Camera");
-            if (p.getInventory().addItem(camera).size() > 0) {
-                Item cameraitem = p.getWorld().dropItemNaturally(p.getLocation(), camera);
+            if (player.getInventory().addItem(camera).size() > 0) {
+                Item cameraitem = player.getWorld().dropItemNaturally(player.getLocation(), camera);
                 cameraitem.setItemStack(camera);
-                u.printMSG(p, "msg_cameradropped");
-            } else u.printMSG(p, "msg_camerainventory");
+                u.printMSG(player, "msg_cameradropped");
+            } else u.printMSG(player, "msg_camerainventory");
 
         } else if (cmd.equalsIgnoreCase("paper")) {
             ItemStack phpaper = COCamera.newPhotoPaper();
-            if (p.getInventory().addItem(phpaper).size() > 0) {
-                Item phpaperitem = p.getWorld().dropItemNaturally(p.getLocation(), phpaper);
+            if (player.getInventory().addItem(phpaper).size() > 0) {
+                Item phpaperitem = player.getWorld().dropItemNaturally(player.getLocation(), phpaper);
                 phpaperitem.setItemStack(phpaper);
-                u.printMSG(p, "msg_paperdropped");
-            } else u.printMSG(p, "msg_paperinventory");
+                u.printMSG(player, "msg_paperdropped");
+            } else u.printMSG(player, "msg_paperinventory");
 
         } else if (cmd.equalsIgnoreCase("files")) {
-            COCamera.printFileList(p, "");
+            COCamera.printFileList(player, "");
         } else if (cmd.equalsIgnoreCase("backgrounds")) {
             File dir = new File(plg.dirBackgrounds);
             List<String> ln = new ArrayList<String>();
             for (String fn : dir.list()) ln.add(fn);
-            u.printPage(p, ln, 1, "msg_bglist", "msg_footer", true);
+            u.printPage(player, ln, 1, "msg_bglist", "msg_footer", true);
         } else if (cmd.equalsIgnoreCase("list")) {
-            Album.printList(p, p.getName(), 1);
+            Album.printList(player, player.getName(), 1);
         } else if (cmd.equalsIgnoreCase("brush")) {
-            boolean brushmode = !WoolSelect.getBrushMode(p);
-            WoolSelect.setBrushMode(p, brushmode);
-            u.printEnDis(p, "msg_brushmode", brushmode);
+            boolean brushmode = !WoolSelect.getBrushMode(player);
+            WoolSelect.setBrushMode(player, brushmode);
+            u.printEnDis(player, "msg_brushmode", brushmode);
         } else if (cmd.equalsIgnoreCase("head")) {
-            Album.developPortrait(p);
+            Album.developPortrait(player);
         } else if (cmd.equalsIgnoreCase("top")) {
-            Album.developTopHalfPhoto(p);
+            Album.developTopHalfPhoto(player);
         } else if (cmd.equalsIgnoreCase("full")) {
-            Album.developPhoto(p);
+            Album.developPhoto(player);
         } else if (cmd.equalsIgnoreCase("reload")) {
             Album.loadAlbum();
             plg.loadCfg();
             RenderHistory.clearHistory();
-            u.printMSG(p, "msg_reloadcfg");
+            u.printMSG(player, "msg_reloadcfg");
         } else if (cmd.equalsIgnoreCase("rst")) {
             RenderHistory.clearHistory();
-            u.printMSG(p, "msg_rstall");
+            u.printMSG(player, "msg_rstall");
         } else return false;
         return true;
     }
 
 
-    public boolean ExecuteCmd(Player p, String cmd, String arg) {
+    public boolean ExecuteCmd(Player player, String cmd, String arg) {
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
         if (cmd.equalsIgnoreCase("help")) {
             int pnum = 1;
             if (u.isInteger(arg)) pnum = Integer.parseInt(arg);
-            u.PrintHlpList(p, pnum, 10);
+            u.PrintHlpList(player, pnum, 10);
         } else if (cmd.equalsIgnoreCase("rst")) {
             RenderHistory.clearHistory(arg);
-            u.printMSG(p, "msg_rstplayer", arg);
+            u.printMSG(player, "msg_rstplayer", arg);
         } else if (cmd.equalsIgnoreCase("rename")) {
-            return ExecuteCmd(p, cmd, "", arg);
+            return ExecuteCmd(player, cmd, "", arg);
         } else if (cmd.equalsIgnoreCase("allowcopy")) {
-            return setAllowCopy(p, arg);
+            return setAllowCopy(player, arg);
         } else if (cmd.equalsIgnoreCase("rotate")) {
-            return setRotionAllowed(p, arg);
+            return setRotionAllowed(player, arg);
         } else if (cmd.equalsIgnoreCase("showname")) {
-            return setShowName(p, arg);
+            return setShowName(player, arg);
         } else if (cmd.equalsIgnoreCase("owner")) {
-            if (Album.isObscuraMap(p.getItemInHand())) {
+            if (Album.isObscuraMap(itemInHand)) {
                 if (!Album.isLimitOver(arg)) {
-                    short id = p.getItemInHand().getDurability();
-                    if (Album.isOwner(id, p)) {
+                    short id = itemInHand.getDurability();
+                    if (Album.isOwner(id, player)) {
                         Album.setOwner(id, arg);
-                        u.printMSG(p, "msg_ownerset", id, arg);
-                    } else u.printMSG(p, "msg_owurnotowner", 'c', '4', id);
-                } else u.printMSG(p, "msg_playeroverlimit", 'c', '4', arg);
-            } else u.printMSG(p, "msg_acneedmap");
+                        u.printMSG(player, "msg_ownerset", id, arg);
+                    } else u.printMSG(player, "msg_owurnotowner", 'c', '4', id);
+                } else u.printMSG(player, "msg_playeroverlimit", 'c', '4', arg);
+            } else u.printMSG(player, "msg_acneedmap");
 
         } else if (cmd.equalsIgnoreCase("files")) {
-            COCamera.printFileList(p, arg);
+            COCamera.printFileList(player, arg);
         } else if (cmd.equalsIgnoreCase("backgrounds")) {
             File dir = new File(plg.dirBackgrounds);
             int pnum = 1;
@@ -181,165 +183,166 @@ public class COCmd implements CommandExecutor {
                 if (fmask.isEmpty()) ln.add(fn);
                 else if (fn.contains(fmask)) ln.add(fn);
             }
-            u.printPage(p, ln, pnum, "msg_bglist", "msg_footer", true);
+            u.printPage(player, ln, pnum, "msg_bglist", "msg_footer", true);
         } else if (cmd.equalsIgnoreCase("list")) {
             int pnum = 1;
-            String pname = p.getName();
+            String pname = player.getName();
             if (arg.matches("[1-9]+[1-9]*")) pnum = Integer.parseInt(arg);
             else pname = arg;
-            Album.printList(p, pname, pnum);
+            Album.printList(player, pname, pnum);
         } else if (cmd.equalsIgnoreCase("paper")) {
             int amount = 1;
             if (arg.matches("[1-9]+[0-9]*")) amount = Integer.parseInt(arg);
             ItemStack phpaper = COCamera.newPhotoPaper(amount);
-            if (p.getInventory().addItem(phpaper).size() > 0) {
-                Item phpaperitem = p.getWorld().dropItemNaturally(p.getLocation(), phpaper);
+            if (player.getInventory().addItem(phpaper).size() > 0) {
+                Item phpaperitem = player.getWorld().dropItemNaturally(player.getLocation(), phpaper);
                 phpaperitem.setItemStack(phpaper);
-                u.printMSG(p, "msg_paperdropped");
-            } else u.printMSG(p, "msg_paperinventory");
+                u.printMSG(player, "msg_paperdropped");
+            } else u.printMSG(player, "msg_paperinventory");
 
         } else if (cmd.equalsIgnoreCase("give")) {
             short id = -1;
             if (u.isInteger(arg)) id = Short.parseShort(arg);
             if ((id >= 0) && (Album.isObscuraMap(id))) {
-                COCamera.giveImageToPlayer(p, id, Album.getPictureName(id));
-                u.printMSG(p, "msg_picturegiven", Album.getPictureName(id), id);
-            } else u.printMSG(p, "msg_unknownpicid", 'c', '4', arg);
+                COCamera.giveImageToPlayer(player, id, Album.getPictureName(id));
+                u.printMSG(player, "msg_picturegiven", Album.getPictureName(id), id);
+            } else u.printMSG(player, "msg_unknownpicid", 'c', '4', arg);
         } else if (cmd.equalsIgnoreCase("portrait")) {
-            Album.developPortrait(p, p.getName(), arg);
+            Album.developPortrait(player, player.getName(), arg);
         } else if (cmd.equalsIgnoreCase("paint")) {
-            if (!WoolSelect.isRegionSelected(p)) {
-                u.printMSG(p, "msg_pxlnoselection");
+            if (!WoolSelect.isRegionSelected(player)) {
+                u.printMSG(player, "msg_pxlnoselection");
                 return false;
             }
 
-            Location loc1 = WoolSelect.getP1(p);
-            Location loc2 = WoolSelect.getP2(p);
+            Location loc1 = WoolSelect.getP1(player);
+            Location loc2 = WoolSelect.getP2(player);
 
-            if (COCamera.isPhotoPaper(p.getItemInHand()) && (p.getItemInHand().getAmount() == 1)) {
-                BufferedImage img = ImageCraft.createPixelArt2D(p, loc1, loc2, true, plg.burnPaintedWool);
+            if (COCamera.isPhotoPaper(itemInHand) && (itemInHand.getAmount() == 1)) {
+                BufferedImage img = ImageCraft.createPixelArt2D(player, loc1, loc2, true, plg.burnPaintedWool);
                 if (img == null) {
-                    u.printMSG(p, "msg_checkdimensions");
+                    u.printMSG(player, "msg_checkdimensions");
                     return true;
                 }
 
-                short mapid = Album.addImage(p.getName(), arg, img, false, true);
+                short mapid = Album.addImage(player.getName(), arg, img, false, true);
                 if (mapid >= 0) {
-                    p.getItemInHand().setType(Material.MAP);
-                    p.getItemInHand().setDurability(mapid);
-                    p.setItemInHand(COCamera.setName(p.getItemInHand(), arg));
+                    itemInHand.setType(Material.MAP);
+                    itemInHand.setDurability(mapid);
+                    player.getInventory().setItemInMainHand(COCamera.setName(itemInHand, arg));
 
-                } else u.printMSG(p, "msg_cannotcreatemap");
-                u.printMSG(p, "msg_newmapcreated", mapid);
-            } else u.printMSG(p, "msg_needphotopaper");
+                } else u.printMSG(player, "msg_cannotcreatemap");
+                u.printMSG(player, "msg_newmapcreated", mapid);
+            } else u.printMSG(player, "msg_needphotopaper");
 
 
         } else if (cmd.equalsIgnoreCase("repaint")) {
-            if (!WoolSelect.isRegionSelected(p)) {
-                u.printMSG(p, "msg_pxlnoselection");
+            if (!WoolSelect.isRegionSelected(player)) {
+                u.printMSG(player, "msg_pxlnoselection");
                 return true;
             }
-            Location loc1 = WoolSelect.getP1(p);
-            Location loc2 = WoolSelect.getP2(p);
-            if ((p.getItemInHand() != null) && (p.getItemInHand().getType() == Material.MAP) &&
-                    Album.isObscuraMap(p.getItemInHand())) {
-                short mapid = p.getItemInHand().getDurability();
-                if (Album.isOwner(mapid, p)) {
-                    BufferedImage img = ImageCraft.createPixelArt2D(p, loc1, loc2, true, plg.burnPaintedWool);
-                    Album.updateImage(mapid, p.getName(), arg, img, false);
-                    p.setItemInHand(COCamera.setName(p.getItemInHand(), arg));
-                    u.printMSG(p, "msg_newmapcreated", mapid);
-                } else u.printMSG(p, "msg_owurnotowner", 'c', '4', mapid);
-            } else u.printMSG(p, "msg_needobscuramapinhand");
+            Location loc1 = WoolSelect.getP1(player);
+            Location loc2 = WoolSelect.getP2(player);
+            if ((itemInHand != null) && (itemInHand.getType() == Material.MAP) &&
+                    Album.isObscuraMap(itemInHand)) {
+                short mapid = itemInHand.getDurability();
+                if (Album.isOwner(mapid, player)) {
+                    BufferedImage img = ImageCraft.createPixelArt2D(player, loc1, loc2, true, plg.burnPaintedWool);
+                    Album.updateImage(mapid, player.getName(), arg, img, false);
+                    player.getInventory().setItemInMainHand(COCamera.setName(itemInHand, arg));
+                    u.printMSG(player, "msg_newmapcreated", mapid);
+                } else u.printMSG(player, "msg_owurnotowner", 'c', '4', mapid);
+            } else u.printMSG(player, "msg_needobscuramapinhand");
 
 
         } else if (cmd.equalsIgnoreCase("remove")) {
-            return removeImage(p, arg);
+            return removeImage(player, arg);
         } else if (cmd.equalsIgnoreCase("photo")) {
-            Album.developPhoto(p, arg);
+            Album.developPhoto(player, arg);
         } else if (cmd.equalsIgnoreCase("image")) {
-            return mapFromImageFile(p, arg, "");
+            return mapFromImageFile(player, arg, "");
         } else if (cmd.equalsIgnoreCase("head")) {
-            Album.developPortrait(p, p.getName(), arg);
+            Album.developPortrait(player, player.getName(), arg);
         } else if (cmd.equalsIgnoreCase("top")) {
-            Album.developTopHalfPhoto(p, p.getName(), arg);
+            Album.developTopHalfPhoto(player, player.getName(), arg);
         } else if (cmd.equalsIgnoreCase("full")) {
-            Album.developPhoto(p, p.getName(), arg);
+            Album.developPhoto(player, player.getName(), arg);
         } else return false;
         return true;
     }
 
-    public boolean ExecuteCmd(Player p, String cmd, String arg1, String arg2) {
+    public boolean ExecuteCmd(Player player, String cmd, String arg1, String arg2) {
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
         if (cmd.equalsIgnoreCase("list")) {
             int pnum = 1;
             if (arg2.matches("[1-9]+[1-9]*")) pnum = Integer.parseInt(arg2);
-            Album.printList(p, arg1, pnum);
+            Album.printList(player, arg1, pnum);
         } else if (cmd.equalsIgnoreCase("image")) {
-            return mapFromImageFile(p, arg1, arg2);
+            return mapFromImageFile(player, arg1, arg2);
         } else if (cmd.equalsIgnoreCase("paint")) {
-            if (!WoolSelect.isRegionSelected(p)) {
-                u.printMSG(p, "msg_pxlnoselection");
+            if (!WoolSelect.isRegionSelected(player)) {
+                u.printMSG(player, "msg_pxlnoselection");
                 return true;
             }
 
             if (!arg1.equalsIgnoreCase("center")) {
-                u.printMSG(p, "msg_paintcentercmd", "/photo paint center <picture name>");
+                u.printMSG(player, "msg_paintcentercmd", "/photo paint center <picture name>");
                 return true;
             }
 
-            Location loc1 = WoolSelect.getP1(p);
-            Location loc2 = WoolSelect.getP2(p);
+            Location loc1 = WoolSelect.getP1(player);
+            Location loc2 = WoolSelect.getP2(player);
 
-            if (COCamera.isPhotoPaper(p.getItemInHand()) && (p.getItemInHand().getAmount() == 1)) {
-                BufferedImage img = ImageCraft.createPixelArt2D(p, loc1, loc2, false, plg.burnPaintedWool);
-                if (img == null) u.returnMSG(true, p, "msg_checkdimensions");
-                short mapid = Album.addImage(p.getName(), arg2, img, false, true);
+            if (COCamera.isPhotoPaper(itemInHand) && (itemInHand.getAmount() == 1)) {
+                BufferedImage img = ImageCraft.createPixelArt2D(player, loc1, loc2, false, plg.burnPaintedWool);
+                if (img == null) u.returnMSG(true, player, "msg_checkdimensions");
+                short mapid = Album.addImage(player.getName(), arg2, img, false, true);
                 if (mapid >= 0) {
-                    p.getItemInHand().setType(Material.MAP);
-                    p.getItemInHand().setDurability(mapid);
-                    p.setItemInHand(COCamera.setName(p.getItemInHand(), arg2));
-                    u.printMSG(p, "msg_newmapcreated", mapid);
-                } else u.printMSG(p, "msg_cannotcreatemap");
-            } else u.printMSG(p, "msg_needphotopaper");
+                    itemInHand.setType(Material.MAP);
+                    itemInHand.setDurability(mapid);
+                    player.getInventory().setItemInMainHand(COCamera.setName(itemInHand, arg2));
+                    u.printMSG(player, "msg_newmapcreated", mapid);
+                } else u.printMSG(player, "msg_cannotcreatemap");
+            } else u.printMSG(player, "msg_needphotopaper");
 
         } else if (cmd.equalsIgnoreCase("repaint")) {
-            if (!WoolSelect.isRegionSelected(p)) {
-                u.printMSG(p, "msg_pxlnoselection");
+            if (!WoolSelect.isRegionSelected(player)) {
+                u.printMSG(player, "msg_pxlnoselection");
                 return true;
             }
             if (!arg1.equalsIgnoreCase("center")) {
-                u.printMSG(p, "msg_paintcentercmd", "/photo repaint center <picture name>");
+                u.printMSG(player, "msg_paintcentercmd", "/photo repaint center <picture name>");
                 return true;
             }
-            Location loc1 = WoolSelect.getP1(p);
-            Location loc2 = WoolSelect.getP2(p);
-            if ((p.getItemInHand() != null) && (p.getItemInHand().getType() == Material.MAP) &&
-                    Album.isObscuraMap(p.getItemInHand())) {
+            Location loc1 = WoolSelect.getP1(player);
+            Location loc2 = WoolSelect.getP2(player);
+            if ((itemInHand != null) && (itemInHand.getType() == Material.MAP) &&
+                    Album.isObscuraMap(itemInHand)) {
 
-                short mapid = p.getItemInHand().getDurability();
+                short mapid = itemInHand.getDurability();
 
-                if (Album.isOwner(mapid, p)) {
-                    BufferedImage img = ImageCraft.createPixelArt2D(p, loc1, loc2, false, plg.burnPaintedWool);
+                if (Album.isOwner(mapid, player)) {
+                    BufferedImage img = ImageCraft.createPixelArt2D(player, loc1, loc2, false, plg.burnPaintedWool);
                     if ((img.getWidth() >= plg.minPixelart) && ((img.getHeight() >= plg.minPixelart))) {
-                        Album.updateImage(mapid, p.getName(), arg2, img, false);
-                        p.setItemInHand(COCamera.setName(p.getItemInHand(), arg2));
-                        u.printMSG(p, "msg_newmapcreated", mapid);
-                    } else u.printMSG(p, "msg_cannotcreatemap");
-                } else u.printMSG(p, "msg_owurnotowner", 'c', '4', mapid);
-            } else u.printMSG(p, "msg_needobscuramapinhand");
+                        Album.updateImage(mapid, player.getName(), arg2, img, false);
+                        player.getInventory().setItemInMainHand(COCamera.setName(itemInHand, arg2));
+                        u.printMSG(player, "msg_newmapcreated", mapid);
+                    } else u.printMSG(player, "msg_cannotcreatemap");
+                } else u.printMSG(player, "msg_owurnotowner", 'c', '4', mapid);
+            } else u.printMSG(player, "msg_needobscuramapinhand");
 
 
         } else if (cmd.equalsIgnoreCase("owner")) {
             if (arg1.matches("[0-9]*")) {
                 short id = Short.parseShort(arg1);
-                if (Album.isOwner(id, p)) {
+                if (Album.isOwner(id, player)) {
                     Album.setOwner(id, arg2);
-                    u.printMSG(p, "msg_ownerset", id, arg2);
-                } else u.printMSG(p, "msg_owurnotowner", 'c', '4', id);
-            } else u.printMSG(p, "msg_acneedmap");
+                    u.printMSG(player, "msg_ownerset", id, arg2);
+                } else u.printMSG(player, "msg_owurnotowner", 'c', '4', id);
+            } else u.printMSG(player, "msg_acneedmap");
 
         } else if (cmd.equalsIgnoreCase("files")) {
-            COCamera.printFileList(p, arg1, arg2);
+            COCamera.printFileList(player, arg1, arg2);
         } else if (cmd.equalsIgnoreCase("backgrounds")) {
             File dir = new File(plg.dirBackgrounds);
             int pnum = 1;
@@ -349,7 +352,7 @@ public class COCmd implements CommandExecutor {
                 if (arg1.isEmpty()) ln.add(fn);
                 else if (fn.contains(arg1)) ln.add(fn);
             }
-            u.printPage(p, ln, pnum, "msg_bglist", "msg_footer", true);
+            u.printPage(player, ln, pnum, "msg_bglist", "msg_footer", true);
         } else if (cmd.equalsIgnoreCase("download")) {
             String fn = arg1;
             if (!fn.endsWith(".png")) fn = fn + ".png";
@@ -357,32 +360,32 @@ public class COCmd implements CommandExecutor {
             BufferedImage img = ImageCraft.getImageByURL(arg2);
             try {
                 ImageIO.write(img, "png", f);
-                u.printMSG(p, "msg_imgsaved", fn);
+                u.printMSG(player, "msg_imgsaved", fn);
             } catch (IOException e) {
-                u.printMSG(p, "msg_imgsavefail");
+                u.printMSG(player, "msg_imgsavefail");
             }
         } else if (cmd.equalsIgnoreCase("rename")) {
             String txt = arg2;
             short id = -1;
             if (u.isIntegerGZ(arg1)) id = Short.parseShort(arg1);
-            else if (Album.isObscuraMap(p.getItemInHand())) {
-                id = p.getItemInHand().getDurability();
+            else if (Album.isObscuraMap(itemInHand)) {
+                id = itemInHand.getDurability();
                 if (!arg1.isEmpty()) txt = arg1 + " " + txt;
             }
             if ((id > 0) && Album.isObscuraMap(id)) {
-                if (Album.isOwner(id, p)) {
+                if (Album.isOwner(id, player)) {
                     Album.setPictureName(id, txt);
-                    u.printMSG(p, "msg_renamed", id, txt);
+                    u.printMSG(player, "msg_renamed", id, txt);
                     RenderHistory.forceUpdate(id);
-                    COCamera.updateInventoryItems(p.getInventory());
-                } else u.printMSG(p, "msg_owurnotowner", 'c', '4', id);
-            } else u.printMSG(p, "msg_acneedmap", 'c');
+                    COCamera.updateInventoryItems(player.getInventory());
+                } else u.printMSG(player, "msg_owurnotowner", 'c', '4', id);
+            } else u.printMSG(player, "msg_acneedmap", 'c');
         } else if (cmd.equalsIgnoreCase("head")) {
-            Album.developPortrait(p, p.getName(), arg1, arg2);
+            Album.developPortrait(player, player.getName(), arg1, arg2);
         } else if (cmd.equalsIgnoreCase("top")) {
-            Album.developTopHalfPhoto(p, p.getName(), arg1, arg2);
+            Album.developTopHalfPhoto(player, player.getName(), arg1, arg2);
         } else if (cmd.equalsIgnoreCase("full")) {
-            Album.developPhoto(p, p.getName(), arg1, arg2);
+            Album.developPhoto(player, player.getName(), arg1, arg2);
         } else return false;
         return true;
 
@@ -439,8 +442,9 @@ public class COCmd implements CommandExecutor {
     private short getId(Player player, String strId) {
         short id = -1;
         if (strId.isEmpty()) {
-            if ((player.getItemInHand() != null) && (player.getItemInHand().getType() == Material.MAP))
-                id = player.getItemInHand().getDurability();
+            ItemStack itemInHand = player.getInventory().getItemInMainHand();
+            if ((itemInHand != null) && (itemInHand.getType() == Material.MAP))
+                id = itemInHand.getDurability();
         } else if (u.isInteger(strId)) id = Short.parseShort(strId);
         return id;
     }

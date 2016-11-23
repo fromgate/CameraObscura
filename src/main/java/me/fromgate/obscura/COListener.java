@@ -56,11 +56,13 @@ public class COListener implements Listener {
     public void onPutMapInFrame(PlayerInteractEntityEvent event) {
         if (!plg.hideNameInFrames) return;
         if (event.getRightClicked().getType() != EntityType.ITEM_FRAME) return;
-        if (event.getPlayer().getItemInHand() == null) return;
-        if (!Album.isObscuraMap(event.getPlayer().getItemInHand())) return;
-        ItemMeta im = event.getPlayer().getItemInHand().getItemMeta();
+        ItemStack itemInHand = event.getPlayer().getInventory().getItemInMainHand();
+        if (itemInHand == null) return;
+        if (!Album.isObscuraMap(itemInHand)) return;
+        ItemMeta im = itemInHand.getItemMeta();
         im.setDisplayName(null);
-        event.getPlayer().getItemInHand().setItemMeta(im);
+        itemInHand.setItemMeta(im);
+        event.getPlayer().getInventory().setItemInMainHand(itemInHand);
     }
 
 
@@ -146,15 +148,16 @@ public class COListener implements Listener {
         else Album.takePicturePhoto(p, model.getName());
     }
 
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.NORMAL)
     public void onObscuraShot(PlayerInteractEvent event) {
-        Player p = event.getPlayer();
-        if (!p.hasPermission("camera-obscura.tripod-camera.use")) return;
+        Player player = event.getPlayer();
+        if (!player.hasPermission("camera-obscura.tripod-camera.use")) return;
         Block cb = event.getClickedBlock();
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (cb.getType() != Material.STONE_BUTTON) return;
-        if ((p.getItemInHand() == null) ||
-                (!COCamera.isPhotoPaper(p.getItemInHand()))) return;
+        if ((player.getInventory().getItemInMainHand() == null) ||
+                (!COCamera.isPhotoPaper(player.getInventory().getItemInMainHand()))) return;
         if (COCamera.isClickedButtonIsLens(event.getClickedBlock())) {
             String background = plg.defaultBackground;
             double price = 0;
@@ -172,44 +175,42 @@ public class COListener implements Listener {
                 owner = COCamera.getObscuraOwner(sign);
                 focus = COCamera.getObscuraFocus(sign);
 
-                if (plg.vault_eco && (price > 0) && (!p.getName().equalsIgnoreCase(owner))) {
-                    if (plg.economy.has(p.getName(), price)) {
+                if (plg.vault_eco && (price > 0) && (!player.getName().equalsIgnoreCase(owner))) {
+                    if (plg.economy.has(player.getName(), price)) {
                         if (!owner.equalsIgnoreCase("unknown")) {
                             plg.economy.depositPlayer(owner, price);
                             @SuppressWarnings("deprecation")
                             Player tp = Bukkit.getPlayerExact(owner);
                             if ((tp != null) && (tp.isOnline()))
-                                u.printMSG(p, "msg_youreceived", plg.economy.format(price), p.getName(), plg.economy.format(plg.economy.getBalance(p.getName()))); //You have paid %1% for photgraphy! (Balance: %2%)
+                                u.printMSG(player, "msg_youreceived", plg.economy.format(price), player.getName(), plg.economy.format(plg.economy.getBalance(player.getName()))); //You have paid %1% for photgraphy! (Balance: %2%)
                         }
-                        plg.economy.withdrawPlayer(p.getName(), price);
-                        u.printMSG(p, "msg_youpaid", plg.economy.format(price), plg.economy.format(plg.economy.getBalance(p.getName())));
+                        plg.economy.withdrawPlayer(player.getName(), price);
+                        u.printMSG(player, "msg_youpaid", plg.economy.format(price), plg.economy.format(plg.economy.getBalance(player.getName())));
                     } else {
-                        u.printMSG(p, "msg_youhavenotmoney");
+                        u.printMSG(player, "msg_youhavenotmoney");
                         return;
                     }
                 }
             }
             if (focus == 0) {
-                double d = p.getLocation().distance(cb.getLocation());
+                double d = player.getLocation().distance(cb.getLocation());
                 if (d < plg.focus1) focus = 1;
                 else if ((d >= plg.focus1) && (d < plg.focus2)) focus = 2;
                 else focus = 3;
             }
             switch (focus) {
                 case 1:
-                    Album.developPortrait(p, owner, p.getName(), background);
+                    Album.developPortrait(player, owner, player.getName(), background);
                     break;
                 case 2:
-                    Album.developTopHalfPhoto(p, owner, p.getName(), background);
-                    ;
+                    Album.developTopHalfPhoto(player, owner, player.getName(), background);
                     break;
                 case 3:
-                    Album.developPhoto(p, owner, p.getName(), background);
-                    ;
+                    Album.developPhoto(player, owner, player.getName(), background);
                     break;
             }
-            p.getWorld().playSound(cb.getLocation(), Sound.BLOCK_PISTON_EXTEND, 1.0f, 1.0f);
-            p.getWorld().playSound(cb.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+            player.getWorld().playSound(cb.getLocation(), Sound.BLOCK_PISTON_EXTEND, 1.0f, 1.0f);
+            player.getWorld().playSound(cb.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
         }
     }

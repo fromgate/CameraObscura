@@ -243,7 +243,7 @@ public class Album {
                 final Player tp = p;
                 Bukkit.getScheduler().scheduleSyncDelayedTask(plg(), new Runnable() {
                     public void run() {
-                        tp.getInventory().removeItem(new ItemStack[]{COCamera.newPhotoPaper()});
+                        tp.getInventory().removeItem(COCamera.newPhotoPaper());
                         COCamera.giveImageToPlayer(tp, mpid, img_name);
                         tp.getWorld().playSound(tp.getLocation(), Sound.BLOCK_PISTON_EXTEND, 1.0f, 1.5f);
                         tp.getWorld().playSound(tp.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
