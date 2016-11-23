@@ -223,7 +223,7 @@ public class ImageCraft {
             }
         if (img != null) return img;
         try {
-            if (img == null) img = ImageIO.read(plg().getClass().getResourceAsStream("default.png"));
+            if (img == null) img = ImageIO.read(plg().getClass().getResourceAsStream("/default.png"));
         } catch (Exception e) {
         }
         return img;
@@ -260,7 +260,7 @@ public class ImageCraft {
         if (img == null) {
             try {
 
-                img = ImageIO.read(plg().getClass().getResourceAsStream("steve.png"));
+                img = ImageIO.read(plg().getClass().getResourceAsStream("/steve.png"));
             } catch (Exception e) {
             }
 

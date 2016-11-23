@@ -228,7 +228,9 @@ public class Album {
                     return mapid;
                 } else u().printMSG(p, "msg_overlimit", 'c');
             } else u().printMSG(p, "msg_needphotopaper");
-        } else u().printMSG(p, "msg_cannotcreatemap;");
+        } else {
+            u().printMSG(p, "msg_cannotcreatemap");
+        }
         return -1;
     }
 
