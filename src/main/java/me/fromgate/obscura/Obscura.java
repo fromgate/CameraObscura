@@ -97,6 +97,9 @@ import java.io.IOException;
  */
 
 public class Obscura extends JavaPlugin {
+
+    private final static String SKIN_URL = "http://skins.minecraft.net/MinecraftSkins/";
+
     //Конфигурация
     boolean versionCheck = true;
     String language = "english";
@@ -130,7 +133,8 @@ public class Obscura extends JavaPlugin {
     float focus2 = 3.8f;
 
     String steveSkin = "steve.png";
-    String skinUrl = "http://s3.amazonaws.com/MinecraftSkins/";
+    //USERNAME.png
+    private String skinUrl = SKIN_URL;
 
     //Настройка отображения заголовка
     boolean defaultShowName = true;
@@ -207,7 +211,12 @@ public class Obscura extends JavaPlugin {
         getConfig().set("pictures.pictures-per-owner", picsPerOwner);
         getConfig().set("pictures.burn-pixel-art-wool", burnPaintedWool);
         getConfig().set("pictures.default-skin", steveSkin);
-        getConfig().set("pictures.skin-url", skinUrl);
+        getConfig().set("pictures.skin-url", SKIN_URL);
+        if (skinUrl.equals("http://s3.amazonaws.com/MinecraftSkins/")) {
+            skinUrl = SKIN_URL;
+            this.getLogger().info("Old skin URL detected: http://s3.amazonaws.com/MinecraftSkins/");
+            this.getLogger().info("Will use new URL: "+ SKIN_URL);
+        }
         getConfig().set("pictures.personal-folders.enable", personalFolders);
         getConfig().set("pictures.personal-folders.auto-create", autocreatePersonalFolder);
         getConfig().set("pictures.muti-map.max-width", maxWidth);
@@ -256,4 +265,7 @@ public class Obscura extends JavaPlugin {
         strokeColor = getConfig().getString("picture-name.stroke-color", "#FFFFFF");
     }
 
+    public String getSkinUrl(String name) {
+        return this.skinUrl+name+".png";
+    }
 }

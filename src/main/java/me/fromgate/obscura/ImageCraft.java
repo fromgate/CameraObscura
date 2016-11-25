@@ -232,7 +232,7 @@ public class ImageCraft {
 
     public static BufferedImage getSkinByName(String name) {
         BufferedImage img = null;
-        String strurl = plg().skinUrl + name + ".png";
+        String strurl = plg().getSkinUrl (name);
         File f = new File(plg().dirSkins + name + ".png");  //
 
         if (f.exists()) {
