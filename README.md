@@ -41,8 +41,8 @@ If you need to bring additional fun to your server.... Hell, no! If you have a s
 * Create a picture based on colored wool pixel-art, You need to create a picture using colored wool.
  Type `/photo brush` to enable brush mode. Left clicking with brush (feather item) will select 1st point (top left!),
   right clicking will select 2nd point (bottom right). Type command:
-  * /photo paint <picture_name> to create a picture resized to 128x128
-  * /photo paint center <picture_name> to create a picture and place it at center of the map. Picture will not be resized so it could be too little... Note: you can repaint previously created picture using command /photo repaint {center} <picture_name> (don't forget to hold in hand picture that you need to repaint)
+  * `/photo paint <picture_name>` to create a picture resized to 128x128
+  * `/photo paint center <picture_name>` to create a picture and place it at center of the map. Picture will not be resized so it could be too little... Note: you can repaint previously created picture using command /photo repaint {center} <picture_name> (don't forget to hold in hand picture that you need to repaint)
 
 ## How to create camera set it on the tripod?
 There's some recipes
