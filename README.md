@@ -1,6 +1,6 @@
 # CameraObscura
 
-CameraObscura is a plugin for bukkit/spgigot.
+CameraObscura is a plugin for bukkit/spigot.
 This plugins brings the photography and the painting in your Minecraft world.
 
 ## What is photography and paintings?
