@@ -1,0 +1,7 @@
+# Created by .ignore support plugin (hsz.mobi)
+.gitignore
+.idea/
+META-INF/
+src/test/
+target/
+src/main/java/me/fromgate/obscura/commands/

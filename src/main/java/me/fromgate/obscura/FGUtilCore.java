@@ -702,7 +702,7 @@ public abstract class FGUtilCore {
             if (f.exists()) lng.load(f);
             else {
                 InputStream is = plg.getClass().getResourceAsStream("/language/" + this.language + ".lng");
-                if (is != null) lng.load(is);
+                if (is != null) lng.load(new InputStreamReader(is, "UTF-8"));
             }
         } catch (Exception e) {
             e.printStackTrace();
