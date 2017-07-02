@@ -1,6 +1,6 @@
 /*  
  *  CameraObscura, Minecraft bukkit plugin
- *  (c)2012-2016, fromgate, fromgate@gmail.com
+ *  (c)2012-2017, fromgate, fromgate@gmail.com
  *  http://dev.bukkit.org/server-mods/camera-obscura/
  *    
  *  This file is part of CameraObscura.
@@ -52,6 +52,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -70,27 +71,28 @@ public class COListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPutMapInFrame(PlayerInteractEntityEvent event) {
         if (!plg.hideNameInFrames) return;
+        if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getRightClicked().getType() != EntityType.ITEM_FRAME) return;
         ItemStack itemInHand = event.getPlayer().getInventory().getItemInMainHand();
         if (itemInHand == null) return;
         if (!Album.isObscuraMap(itemInHand)) return;
-        ItemMeta im = itemInHand.getItemMeta();
-        im.setDisplayName(null);
-        itemInHand.setItemMeta(im);
+        ItemMeta meta = itemInHand.getItemMeta();
+        meta.setDisplayName(null);
+        itemInHand.setItemMeta(meta);
         event.getPlayer().getInventory().setItemInMainHand(itemInHand);
     }
 
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        final Player p = event.getPlayer();
-        ImageCraft.updateSkinCache(p);
-        u.updateMsg(p);
-        RenderHistory.clearHistory(p);
-        WoolSelect.clearSelection(p);
-        COCamera.updateInventoryItems(p.getInventory());
-        if (plg.personalFolders && plg.autocreatePersonalFolder && p.hasPermission("camera-obscura.files.autocreate")) {
-            File dir = new File(plg.dirImages + p.getName() + File.separator);
+        final Player player = event.getPlayer();
+        ImageCraft.updateSkinCache(player);
+        u.updateMsg(player);
+        RenderHistory.clearHistory(player);
+        WoolSelect.clearSelection(player);
+        COCamera.updateInventoryItems(player.getInventory());
+        if (plg.personalFolders && plg.autocreatePersonalFolder && player.hasPermission("camera-obscura.files.autocreate")) {
+            File dir = new File(plg.dirImages + player.getName() + File.separator);
             if (!dir.exists()) dir.mkdirs();
         }
     }
@@ -170,14 +172,14 @@ public class COListener implements Listener {
     public void onObscuraShot(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (!player.hasPermission("camera-obscura.tripod-camera.use")) return;
-        Block cb = event.getClickedBlock();
+        Block clickedBlock = event.getClickedBlock();
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (cb.getType() != Material.STONE_BUTTON) return;
+        if (clickedBlock.getType() != Material.STONE_BUTTON) return;
         if ((player.getInventory().getItemInMainHand() == null) ||
                 (!COCamera.isPhotoPaper(player.getInventory().getItemInMainHand()))) return;
         if (COCamera.isClickedButtonIsLens(event.getClickedBlock())) {
             String background = plg.defaultBackground;
-            double price = 0;
+            double price;
             String owner = "unknown";
             int focus = 0; // если 0 - [photo]
             // 1 - [head shot]
@@ -185,7 +187,7 @@ public class COListener implements Listener {
             // 3 - [full length]
 
 
-            Sign sign = COCamera.getObscuraSign(cb.getRelative(BlockFace.DOWN));
+            Sign sign = COCamera.getObscuraSign(clickedBlock.getRelative(BlockFace.DOWN));
             if (sign != null) {
                 background = COCamera.getObscuraBackground(sign);
                 price = COCamera.getObscuraPrice(sign);
@@ -210,7 +212,7 @@ public class COListener implements Listener {
                 }
             }
             if (focus == 0) {
-                double d = player.getLocation().distance(cb.getLocation());
+                double d = player.getLocation().distance(clickedBlock.getLocation());
                 if (d < plg.focus1) focus = 1;
                 else if ((d >= plg.focus1) && (d < plg.focus2)) focus = 2;
                 else focus = 3;
@@ -226,8 +228,8 @@ public class COListener implements Listener {
                     Album.developPhoto(player, owner, player.getName(), background);
                     break;
             }
-            player.getWorld().playSound(cb.getLocation(), Sound.BLOCK_PISTON_EXTEND, 1.0f, 1.0f);
-            player.getWorld().playSound(cb.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+            player.getWorld().playSound(clickedBlock.getLocation(), Sound.BLOCK_PISTON_EXTEND, 1.0f, 1.0f);
+            player.getWorld().playSound(clickedBlock.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
         }
     }
@@ -236,16 +238,16 @@ public class COListener implements Listener {
     public void onBreakTripodCamera(BlockBreakEvent event) {
         if (!plg.dropObscura) return;
         if (event.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
-        Block b = event.getBlock();
-        if (COCamera.isBlockIsPartOfCamera(b)) {
-            if (b.getType() != Material.STONE_BUTTON) b = COCamera.getLensFromTripodCamera(b);
-            if (b == null) return;
-            b.getDrops().clear();
-            b.setType(Material.AIR);
+        Block block = event.getBlock();
+        if (COCamera.isBlockIsPartOfCamera(block)) {
+            if (block.getType() != Material.STONE_BUTTON) block = COCamera.getLensFromTripodCamera(block);
+            if (block == null) return;
+            block.getDrops().clear();
+            block.setType(Material.AIR);
             ItemStack camera = COCamera.newCamera();
-            World w = b.getWorld();
-            Item dropped = w.dropItemNaturally(b.getLocation(), camera);
-            w.playSound(dropped.getLocation(), Sound.BLOCK_LADDER_STEP, 1, 1);
+            World world = block.getWorld();
+            Item dropped = world.dropItemNaturally(block.getLocation(), camera);
+            world.playSound(dropped.getLocation(), Sound.BLOCK_LADDER_STEP, 1, 1);
             dropped.setItemStack(camera);
         }
     }
@@ -259,26 +261,26 @@ public class COListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onSetObscuraPrice(SignChangeEvent event) {
-        String l = ChatColor.stripColor(event.getLine(1));
-        if (l.equalsIgnoreCase("[photo]") ||
-                l.equalsIgnoreCase("[head shot]") ||
-                l.equalsIgnoreCase("[top half]") ||
-                l.equalsIgnoreCase("[full length]")) {
+        String line = ChatColor.stripColor(event.getLine(1));
+        if (line.equalsIgnoreCase("[photo]") ||
+                line.equalsIgnoreCase("[head shot]") ||
+                line.equalsIgnoreCase("[top half]") ||
+                line.equalsIgnoreCase("[full length]")) {
             if (!event.getPlayer().hasPermission("camera-obscura.set-sign")) {
-                l = l.replace("[", "{").replace("]", "}");
-                event.setLine(1, l);
+                line = line.replace("[", "{").replace("]", "}");
+                event.setLine(1, line);
                 return;
             }
-            event.setLine(1, ChatColor.RED + l);
-            l = ChatColor.stripColor(event.getLine(0));
-            if (l.isEmpty()) l = event.getPlayer().getName();
-            event.setLine(0, ChatColor.GREEN + l);
-            l = ChatColor.stripColor(event.getLine(2));
-            if (l.isEmpty() || (!l.matches("[0-9]*"))) l = "free";
-            event.setLine(2, ChatColor.GOLD + l);
-            l = ChatColor.stripColor(event.getLine(3));
-            if (l.isEmpty()) l = "default";
-            event.setLine(3, ChatColor.BLUE + l);
+            event.setLine(1, ChatColor.RED + line);
+            line = ChatColor.stripColor(event.getLine(0));
+            if (line.isEmpty()) line = event.getPlayer().getName();
+            event.setLine(0, ChatColor.GREEN + line);
+            line = ChatColor.stripColor(event.getLine(2));
+            if (line.isEmpty() || (!line.matches("[0-9]*"))) line = "free";
+            event.setLine(2, ChatColor.GOLD + line);
+            line = ChatColor.stripColor(event.getLine(3));
+            if (line.isEmpty()) line = "default";
+            event.setLine(3, ChatColor.BLUE + line);
         }
     }
 
@@ -290,24 +292,24 @@ public class COListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBuildCamera(PlayerInteractEvent event) {
-        Player p = event.getPlayer();
-        if (!p.hasPermission("camera-obscura.tripod-camera.build")) return;
+        Player player = event.getPlayer();
+        if (!player.hasPermission("camera-obscura.tripod-camera.build")) return;
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getClickedBlock().getType() != Material.NOTE_BLOCK) return;
         if (COCamera.isButtonPlacedOnTheNoteBlock(event.getClickedBlock())) return;
-        if (!COCamera.isCameraInHand(p)) return;
+        if (!COCamera.isCameraInHand(player)) return;
         if (event.getClickedBlock().getRelative(BlockFace.DOWN).getType() != Material.FENCE) return;
 
         Block b = event.getClickedBlock().getRelative(event.getBlockFace());
-        byte dirdata = 0;
-        if (event.getBlockFace() == BlockFace.SOUTH) dirdata = 3;
-        else if (event.getBlockFace() == BlockFace.NORTH) dirdata = 4;
-        else if (event.getBlockFace() == BlockFace.WEST) dirdata = 2;
-        else if (event.getBlockFace() == BlockFace.EAST) dirdata = 1;
+        byte direction = 0;
+        if (event.getBlockFace() == BlockFace.SOUTH) direction = 3;
+        else if (event.getBlockFace() == BlockFace.NORTH) direction = 4;
+        else if (event.getBlockFace() == BlockFace.WEST) direction = 2;
+        else if (event.getBlockFace() == BlockFace.EAST) direction = 1;
 
-        if (dirdata == 0) return;
-        if (u.placeBlock(b, p, Material.STONE_BUTTON, dirdata, false)) return;
-        if (!ItemUtil.removeItemInHand(p, plg.camera)) b.setType(Material.AIR);
+        if (direction == 0) return;
+        if (u.placeBlock(b, player, Material.STONE_BUTTON, direction, false)) return;
+        if (!ItemUtil.removeItemInHand(player, plg.camera)) b.setType(Material.AIR);
 
     }
 
@@ -329,6 +331,4 @@ public class COListener implements Listener {
     public void onPlayerItemHeld(PlayerItemHeldEvent event) {
         COCamera.updateItemName(event.getPlayer().getInventory().getItem(event.getNewSlot()));
     }
-
-
 }

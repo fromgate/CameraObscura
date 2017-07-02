@@ -110,9 +110,11 @@ public class Album {
     }
 
     public static String getPictureName(short id) {
-        if (album.containsKey(id)) return album.get(id).name;
-        else if (deletedmaps.contains(id))
+        if (album.containsKey(id)) {
+            return album.get(id).name;
+        } else if (deletedmaps.contains(id)) {
             return ChatColor.stripColor(u().getMSG("msg_removedimage", Short.toString(id)));
+        }
         return "";
     }
 
@@ -139,9 +141,9 @@ public class Album {
         MapView map = Bukkit.getServer().getMap(id);
         map.setCenterX(Integer.MAX_VALUE);
         map.setCenterZ(Integer.MAX_VALUE);
-        for (MapRenderer r : map.getRenderers())
+        for (MapRenderer r : map.getRenderers()) {
             map.removeRenderer(r);
-        //map.getRenderers().clear();
+        }
         CORenderer mr = new CORenderer(plg(), image);
         mr.initialize(map);
         map.addRenderer(mr);
@@ -170,8 +172,9 @@ public class Album {
         if (album.containsKey(id)) {
             album.remove(id);
             MapView map = Bukkit.getServer().getMap(id);
-            for (MapRenderer mr : map.getRenderers())
+            for (MapRenderer mr : map.getRenderers()) {
                 if (mr instanceof CORenderer) map.removeRenderer(mr);
+            }
             deletedmaps.add(id);
             RenderHistory.forceUpdate(id);
             saveAlbum();

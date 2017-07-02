@@ -22,11 +22,11 @@
 package me.fromgate.obscura;
 
 import net.milkbowl.vault.economy.Economy;
+import org.bstats.MetricsLite;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
 
 /*
  * Изменения:
@@ -191,11 +191,7 @@ public class Obscura extends JavaPlugin {
         if (useRecipes) COCamera.initRecipes();
         vault_eco = COCamera.setupEconomy();
         if (!vault_eco) u.log("Failed to init Vault/Economy services. Economic features will be disabled");
-        try {
-            MetricsLite metrics = new MetricsLite(this);
-            metrics.start();
-        } catch (IOException e) {
-        }
+        new MetricsLite(this);
     }
 
 
